@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 
 :root {
@@ -5,22 +6,48 @@
   --foreground: #171717;
 }
 
-@theme inline {
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+/* @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
+} */
+/* 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
-body {
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+/* main {
+  min-height: calc(100vh  64px);
+} */
+
+/* body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+} */
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+
+  /* 🔥 DARK MODE ANIMATION */
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
 }
