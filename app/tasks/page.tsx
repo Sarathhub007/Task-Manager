@@ -5,6 +5,7 @@ import TaskList from "./TaskList";
 import { useTasks } from "./useTasks";
 import { useTheme } from "../hooks/useTheme";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function TasksPage() {
   const {
@@ -24,7 +25,17 @@ export default function TasksPage() {
 
   const { theme, toggleTheme } = useTheme();
 
+  <Link
+  href="/pomodoro"
+  className="inline-block mb-4 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+>
+  Go to Pomodoro ⏱️
+</Link>
+
   return (
+
+
+    
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
