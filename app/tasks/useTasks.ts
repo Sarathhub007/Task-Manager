@@ -13,7 +13,6 @@ export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
 
-  // Load tasks
   useEffect(() => {
     try {
       const savedTasks = localStorage.getItem("tasks");
@@ -24,13 +23,10 @@ export function useTasks() {
       localStorage.removeItem("tasks");
     }
   }, []);
-
-  // Save tasks
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  // Load filter
   useEffect(() => {
     const savedFilter = localStorage.getItem("taskFilter") as Filter | null;
     if (savedFilter) {

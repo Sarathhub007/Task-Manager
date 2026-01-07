@@ -23,7 +23,6 @@ export default function TasksPage() {
     allTasks,
   } = useTasks();
 
-  const { theme, toggleTheme } = useTheme();
 
   <Link
   href="/pomodoro"
@@ -81,30 +80,7 @@ export default function TasksPage() {
       </button>
 
       {/* Dark mode toggle */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full border transition-all duration-300 hover:scale-110 bg-gray-200 dark:bg-gray-700"
-      >
-        <span
-          className={`absolute text-xl transition-all duration-500 ${
-            theme === "dark"
-              ? "rotate-0 scale-100 opacity-100"
-              : "rotate-180 scale-0 opacity-0"
-          }`}
-        >
-          ☀️
-        </span>
-
-        <span
-          className={`absolute text-xl transition-all duration-500 ${
-            theme === "dark"
-              ? "rotate-180 scale-0 opacity-0"
-              : "rotate-0 scale-100 opacity-100"
-          }`}
-        >
-          🌙
-        </span>
-      </button>
+     
 
       <TaskList
         tasks={tasks}
