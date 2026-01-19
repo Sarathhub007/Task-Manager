@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2, Pencil, X, Save } from "lucide-react";
 type Task = {
   id: number;
@@ -9,32 +9,37 @@ type Task = {
 
 type Props = {
   task: Task;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string, newTitle: string) => void;
+  onToggle: () => void;
+  onDelete: () => void;
+  onEdit: (newTitle: string) => void;
 };
 
 export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.text);
 
-  useEffect(() => {
-    setEditText(task.text);
-  }, [task.text]);
+  const handleEdit = () => {
+    if (!task.completed) {
+      setEditText(task.text);
+      setIsEditing(true);
+    }
+  };
 
   const handleSave = () => {
     if (task.completed) return;
     if (!editText.trim()) return;
-    onEdit(task.id, editText);
+    onEdit(editText);
     setIsEditing(false);
   };
 
   return (
-    <li className="flex justify-between items-center gap-2 p-2 rounded
+    <li
+      className="flex justify-between items-center gap-2 p-2 rounded
       bg-white dark:bg-gray-800
       border border-gray-200 dark:border-gray-700
       transition-colors duration-300
-    ">
+    "
+    >
       {isEditing ? (
         <input
           value={editText}
@@ -51,7 +56,7 @@ export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
         />
       ) : (
         <span
-          onClick={() => onToggle(task.id)}
+          onClick={() => onToggle()}
           className={`cursor-pointer flex-1 transition-all duration-300 ${
             task.completed
               ? "line-through text-gray-400 opacity-70 scale-[0.98]"
@@ -83,7 +88,7 @@ export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
       ) : (
         <>
           <button
-            onClick={() => !task.completed && setIsEditing(true)}
+            onClick={handleEdit}
             disabled={task.completed}
             className={`p-1 ${
               task.completed
@@ -94,7 +99,7 @@ export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
             <Pencil size={16} />
           </button>
           <button
-            onClick={() => onDelete(task.id)}
+            onClick={() => onDelete()}
             className="p-1 text-red-500 hover:bg-red-100 rounded"
           >
             <Trash2 size={16} />
