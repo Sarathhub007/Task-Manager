@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "@/app/hooks/useTheme";
 import { Moon, Sun } from "lucide-react";
+import { useTheme } from "@/components/useTheme";
+import LogoutButton from "./LogoutButton";
+
+
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -27,8 +30,10 @@ export default function Navbar() {
           Tasks
         </Link>
       </div>
-
-      {/* Theme Toggle */}
+   
+      
+   
+      <div className="flex flex-row gap-4">
       <button
         onClick={toggleTheme}
         className="
@@ -47,6 +52,8 @@ export default function Navbar() {
           <Moon className="w-5 h-5 text-gray-700" />
         )}
       </button>
+      <LogoutButton/> 
+      </div>
     </nav>
   );
 }

@@ -3,11 +3,33 @@
 import TaskInput from "./TaskInput";
 import TaskList from "./TaskList";
 import { useTasks } from "./useTasks";
-import { useTheme } from "../hooks/useTheme";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 export default function TasksPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user has a valid token
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/verify", {
+          method: "GET",
+        });
+        if (!res.ok) {
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        router.push("/auth/login");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   const {
     tasks,
     filter,
@@ -23,18 +45,14 @@ export default function TasksPage() {
     allTasks,
   } = useTasks();
 
-
   <Link
-  href="/pomodoro"
-  className="inline-block mb-4 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
->
-  Go to Pomodoro ⏱️
-</Link>
+    href="/pomodoro"
+    className="inline-block mb-4 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+  >
+    Go to Pomodoro ⏱️
+  </Link>;
 
   return (
-
-
-    
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -55,7 +73,7 @@ export default function TasksPage() {
         {["all", "completed", "pending"].map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f as any)}
+            onClick={() => setFilter(f as "all" | "completed" | "pending")}
             className={`px-3 py-1 border rounded transition-colors ${
               filter === f
                 ? "bg-black text-white"
@@ -80,7 +98,6 @@ export default function TasksPage() {
       </button>
 
       {/* Dark mode toggle */}
-     
 
       <TaskList
         tasks={tasks}

@@ -1,15 +1,16 @@
-import { cookies } from "next/headers";
-import { prisma } from "./prisma";
+import jwt from "jsonwebtoken";
 
-export async function getCurrentUser() {
-  const cookieStore = cookies();
-  const userId = cookieStore.get("userId")?.value;
+interface TokenPayload {
+  id: string;
+  email: string;
+}
 
-  if (!userId) return null;
+const SECRET = process.env.JWT_SECRET!;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
+export function createToken(payload: TokenPayload): string {
+  return jwt.sign(payload, SECRET, { expiresIn: "7d" });
+}
 
-  return user;
+export function verifyToken(token: string): TokenPayload {
+  return jwt.verify(token, SECRET) as TokenPayload;
 }
