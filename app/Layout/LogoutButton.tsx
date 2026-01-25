@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -31,7 +32,7 @@ export default function LogoutButton() {
       disabled={loading}
       className="bg-red-600 p-2 rounded-md font-bold hover:cursor-pointer hover:bg-red-500 "
     >
-      Logout
+      <LogOut/>
     </button>
   );
 }

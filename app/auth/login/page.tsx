@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import login from "../../../public/login.jpg"
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -30,6 +31,10 @@ function Login() {
       const data = await res.json();
 
       if (res.ok) {
+        
+        localStorage.setItem("user", JSON.stringify(data.user || { email }));
+    
+        window.dispatchEvent(new Event("storage"));
         router.push("/tasks");
       } else {
         setError(data.error || "Login failed");
@@ -42,8 +47,8 @@ function Login() {
   };
 
   return (
-    <div className="h-screen bg-gray-700 flex justify-center items-center">
-      <div className="flex flex-col items-center gap-4 bg-gray-800 rounded-xl py-10 px-10 shadow-lg hover:shadow-gray-400 w-full max-w-sm">
+    <div className="h-screen  flex justify-center items-center bg-center bg-cover" style={{ backgroundImage: `url(${login.src})` }}>
+      <div className="flex flex-col items-center gap-4  rounded-xl py-10 px-10 shadow-lg hover:shadow-gray-400 w-full max-w-sm">
         <h1 className="text-white text-2xl font-semibold">Login</h1>
 
         {error && (

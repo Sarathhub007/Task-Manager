@@ -3,7 +3,7 @@ import "./globals.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Navbar from "./Layout/navabar";
-import { ThemeProvider } from "./ThemeProvider";
+// import { ThemeProvider } from "./ThemeProvider";
 
 export default function RootLayout({
   children,
@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body suppressHydrationWarning={true}>
-        <ThemeProvider>
+        {/* <ThemeProvider> */}
           <div className="h-screen">
             <Navbar />
             <AnimatePresence mode="wait">
@@ -28,7 +28,7 @@ export default function RootLayout({
             </AnimatePresence>
             {children}
           </div>
-        </ThemeProvider>
+        {/* </ThemeProvider> */}
       </body>
     </html>
   );

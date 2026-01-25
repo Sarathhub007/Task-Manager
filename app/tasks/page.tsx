@@ -13,7 +13,7 @@ export default function TasksPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user has a valid token
+   
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/auth/verify", {
@@ -97,7 +97,7 @@ export default function TasksPage() {
         Clear Completed
       </button>
 
-      {/* Dark mode toggle */}
+  
 
       <TaskList
         tasks={tasks}
