@@ -1,10 +1,14 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
 export type Task = {
-  id: number;
-  text: string;
+  id: string;
+  title: string;
   completed: boolean;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  category: string | null;
+  dueDate: string | null;
 };
 
 export type Filter = "all" | "completed" | "pending";
@@ -12,70 +16,173 @@ export type Filter = "all" | "completed" | "pending";
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [loading, setLoading] = useState(true);
+
+  // ---------------- Fetch Tasks ----------------
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/tasks");
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch tasks");
+      }
+
+      const data = await res.json();
+      setTasks(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    try {
-      const savedTasks = localStorage.getItem("tasks");
-      if (savedTasks) {
-        setTasks(JSON.parse(savedTasks));
-      }
-    } catch {
-      localStorage.removeItem("tasks");
-    }
+    fetchTasks();
   }, []);
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+
+  // ---------------- Filter ----------------
 
   useEffect(() => {
     const savedFilter = localStorage.getItem("taskFilter") as Filter | null;
+
     if (savedFilter) {
       setFilter(savedFilter);
     }
   }, []);
 
-  // Save filter
   useEffect(() => {
     localStorage.setItem("taskFilter", filter);
   }, [filter]);
 
-  const addTask = (text: string) => {
-    setTasks([...tasks, { id: Date.now(), text, completed: false }]);
+  // ---------------- Add ----------------
+
+  const addTask = async (title: string) => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create task");
+      }
+
+      await fetchTasks();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+  // ---------------- Toggle ----------------
+
+  const toggleTask = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+
+    if (!task) return;
+
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          completed: !task.completed,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update task");
+      }
+
+      await fetchTasks();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+  // ---------------- Edit ----------------
+
+  const editTask = async (id: string, newTitle: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: newTitle,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to edit task");
+      }
+
+      await fetchTasks();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const editTask = (id: number, newText: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, text: newText } : task
-      )
-    );
+  // ---------------- Delete ----------------
+
+  const deleteTask = async (id: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete task");
+      }
+
+      await fetchTasks();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const clearCompleted = () => {
-    setTasks(tasks.filter((task) => !task.completed));
+  // ---------------- Clear Completed ----------------
+
+  const clearCompleted = async () => {
+    const completedTasks = tasks.filter((task) => task.completed);
+
+    for (const task of completedTasks) {
+      await deleteTask(task.id);
+    }
+
+    await fetchTasks();
   };
+
+  // ---------------- Filtered Tasks ----------------
 
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "completed") return task.completed;
-    if (filter === "pending") return !task.completed;
-    return true;
+    switch (filter) {
+      case "completed":
+        return task.completed;
+
+      case "pending":
+        return !task.completed;
+
+      default:
+        return true;
+    }
   });
 
+  // ---------------- Statistics ----------------
+
   const total = tasks.length;
-  const completed = tasks.filter((t) => t.completed).length;
-  const pending = tasks.filter((t) => !t.completed).length;
+
+  const completed = tasks.filter((task) => task.completed).length;
+
+  const pending = total - completed;
 
   return {
     tasks: filteredTasks,
@@ -90,5 +197,7 @@ export function useTasks() {
     total,
     completed,
     pending,
+    loading,
+    refresh: fetchTasks,
   };
 }

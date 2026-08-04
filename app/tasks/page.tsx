@@ -1,28 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ListTodo, CircleCheckBig, Clock3, Timer } from "lucide-react";
+
 import TaskInput from "./TaskInput";
 import TaskList from "./TaskList";
 import { useTasks } from "./useTasks";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-import { motion } from "framer-motion";
-import Link from "next/link";
 
 export default function TasksPage() {
   const router = useRouter();
 
   useEffect(() => {
-   
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/verify", {
-          method: "GET",
-        });
+        const res = await fetch("/api/auth/verify");
+
         if (!res.ok) {
           router.push("/auth/login");
         }
-      } catch (error) {
+      } catch {
         router.push("/auth/login");
       }
     };
@@ -38,73 +37,155 @@ export default function TasksPage() {
     toggleTask,
     deleteTask,
     editTask,
-    clearCompleted,
     total,
     completed,
     pending,
-    allTasks,
   } = useTasks();
-
-  <Link
-    href="/pomodoro"
-    className="inline-block mb-4 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-  >
-    Go to Pomodoro ⏱️
-  </Link>;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="relative p-6 max-w-md mx-auto bg-white rounded-xl shadow dark:bg-gray-900 transition-colors duration-300"
+      transition={{ duration: 0.35 }}
+      className="max-w-3xl mx-auto px-6 py-8"
     >
-      <h1 className="text-xl font-bold mb-2">TaskBoard</h1>
+      {/* Heading */}
 
-      <div className="mb-4 text-sm text-gray-600 dark:text-gray-400 flex gap-4">
-        <span>Total: {total}</span>
-        <span>Pending: {pending}</span>
-        <span>Completed: {completed}</span>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold">
+          📋 TaskBoard
+        </h1>
+
+        <p className="text-gray-500 mt-2">
+          Organize your day. Stay productive. Finish your goals.
+        </p>
       </div>
 
-      <TaskInput onAdd={addTask} />
+      {/* Statistics */}
 
-      <div className="flex gap-2 my-4">
-        {["all", "completed", "pending"].map((f) => (
+      <div className="grid grid-cols-3 gap-4 mb-8">
+
+        <div className="rounded-xl bg-blue-100 p-5 text-center shadow-sm">
+          <ListTodo
+            className="mx-auto mb-2 text-blue-700"
+            size={28}
+          />
+
+          <p className="text-sm text-gray-600">
+            Total
+          </p>
+
+          <h2 className="text-3xl font-bold">
+            {total}
+          </h2>
+        </div>
+
+        <div className="rounded-xl bg-yellow-100 p-5 text-center shadow-sm">
+          <Clock3
+            className="mx-auto mb-2 text-yellow-700"
+            size={28}
+          />
+
+          <p className="text-sm text-gray-600">
+            Pending
+          </p>
+
+          <h2 className="text-3xl font-bold">
+            {pending}
+          </h2>
+        </div>
+
+        <div className="rounded-xl bg-green-100 p-5 text-center shadow-sm">
+          <CircleCheckBig
+            className="mx-auto mb-2 text-green-700"
+            size={28}
+          />
+
+          <p className="text-sm text-gray-600">
+            Completed
+          </p>
+
+          <h2 className="text-3xl font-bold">
+            {completed}
+          </h2>
+        </div>
+
+      </div>
+
+      {/* Add Task */}
+
+      <div className="mb-6">
+        <TaskInput onAdd={addTask} />
+      </div>
+
+      {/* Focus Button */}
+
+      <div className="mb-6">
+
+        <Link
+          href="/pomodoro"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700"
+        >
+          <Timer size={18} />
+          Focus Mode
+        </Link>
+
+      </div>
+
+      {/* Filters */}
+
+      <div className="flex gap-3 mb-6">
+
+        {["all", "pending", "completed"].map((f) => (
+
           <button
             key={f}
-            onClick={() => setFilter(f as "all" | "completed" | "pending")}
-            className={`px-3 py-1 border rounded transition-colors ${
+            onClick={() =>
+              setFilter(f as "all" | "pending" | "completed")
+            }
+            className={`rounded-lg px-5 py-2 font-medium transition-all duration-200 ${
               filter === f
-                ? "bg-black text-white"
-                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 hover:bg-gray-200"
             }`}
           >
-            {f}
+            {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
+
         ))}
+
       </div>
 
-      <button
-        onClick={clearCompleted}
-        disabled={!allTasks.some((t) => t.completed)}
-        className={`mb-4 px-3 py-1 border rounded transition-all ${
-          allTasks.some((t) => t.completed)
-            ? "bg-red-500 text-white hover:bg-red-600"
-            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-        }`}
-      >
-        Clear Completed
-      </button>
+      {/* Task List */}
 
-  
+      {tasks.length === 0 ? (
 
-      <TaskList
-        tasks={tasks}
-        onToggle={toggleTask}
-        onDelete={deleteTask}
-        onEdit={editTask}
-      />
+        <div className="rounded-xl border border-dashed border-gray-300 py-14 text-center">
+
+          <div className="text-6xl mb-3">
+            📝
+          </div>
+
+          <h2 className="text-xl font-semibold">
+            No Tasks Yet
+          </h2>
+
+          <p className="mt-2 text-gray-500">
+            Add your first task above to get started.
+          </p>
+
+        </div>
+
+      ) : (
+
+        <TaskList
+          tasks={tasks}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+          onEdit={editTask}
+        />
+
+      )}
     </motion.div>
   );
 }

@@ -1,19 +1,19 @@
 "use client";
 
 import TaskItem from "./TaskItem";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Task = {
-  id: number;
-  text: string;
+  id: string;
+  title: string;
   completed: boolean;
 };
 
 type Props = {
   tasks: Task[];
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
-  onEdit: (id: number, newText: string) => void;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  onEdit: (id: string, newTitle: string) => void;
 };
 
 export default function TaskList({
@@ -23,25 +23,35 @@ export default function TaskList({
   onEdit,
 }: Props) {
   return (
-    <ul className="mt-4 space-y-2">
-      <AnimatePresence>
+    <div className="mt-6">
+      <AnimatePresence mode="popLayout">
         {tasks.map((task) => (
-          <motion.li
+          <motion.div
             key={task.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
+            layout
+            initial={{ opacity: 0, y: 15, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{
+              opacity: 0,
+              x: -40,
+              scale: 0.95,
+              transition: { duration: 0.2 },
+            }}
+            transition={{
+              duration: 0.25,
+              ease: "easeOut",
+            }}
+            className="mb-4"
           >
             <TaskItem
               task={task}
               onToggle={() => onToggle(task.id)}
               onDelete={() => onDelete(task.id)}
-              onEdit={(newText) => onEdit(task.id, newText)}
+              onEdit={(newTitle) => onEdit(task.id, newTitle)}
             />
-          </motion.li>
+          </motion.div>
         ))}
       </AnimatePresence>
-    </ul>
+    </div>
   );
 }

@@ -17,8 +17,8 @@
     "framer-motion": "^12.23.26",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.562.0",
+    "mysql2": "^3.23.2",
     "next": "16.0.10",
-    "pg": "^8.17.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "tailwind-merge": "^3.4.0"
@@ -27,7 +27,6 @@
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
-    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.23",

@@ -1,89 +1,130 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Home, KeyRound, LayoutList, LogIn, Moon, SignalIcon, Sun, Timer } from "lucide-react";
-// import { useTheme } from "@/components/useTheme";
+import { usePathname } from "next/navigation";
+import {
+  Calendar,
+  Home,
+  LayoutList,
+  Timer,
+} from "lucide-react";
 import LogoutButton from "./LogoutButton";
 import { useEffect, useState } from "react";
 
 export default function Navbar() {
-  const route = useRouter();
   const pathname = usePathname();
-  // const { theme, toggleTheme } = useTheme();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const checkAuth = () => {
-      const user = localStorage.getItem("user");
-      setIsLoggedIn(!!user);
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUsername(user.name || "User");
+        setIsLoggedIn(true);
+      } else {
+        setUsername("");
+        setIsLoggedIn(false);
+      }
     };
 
     checkAuth();
 
     window.addEventListener("storage", checkAuth);
 
-    checkAuth();
-
-    return () => window.removeEventListener("storage", checkAuth);
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
   }, [pathname]);
 
   const linkClass = (path: string) =>
-    `px-3 py-1 rounded-md transition font-medium ${
+    `flex items-center justify-center p-2 rounded-lg transition-all duration-300 ${
       pathname === path
-        ? "bg-black text-white dark:bg-white dark:text-black"
-        : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+        ? "bg-blue-600 text-white shadow-md scale-105"
+        : "text-gray-600 hover:bg-gray-200"
     }`;
 
   return (
-    <nav className="flex items-center justify-between px-6 py-3 bg-white dark:bg-black border-b dark:border-gray-800 ">
-      {/* Left */}
-      <div className="flex gap-3">
+    <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/90 backdrop-blur-md shadow-sm border-b">
+
+      {/* Logo */}
+      <div className="flex items-center gap-2">
+        <LayoutList className="text-blue-600" size={26} />
+        <span className="text-xl font-bold text-gray-800">
+          TaskBoard
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center gap-4">
+
         {!isLoggedIn ? (
           <>
-            <Link href="/" className={linkClass("/")}>
-              <Home/>
+            <Link
+              href="/"
+              title="Home"
+              className={linkClass("/")}
+            >
+              <Home size={20} />
             </Link>
-            <Link href="/auth/login" className={linkClass("/auth/login")}>
+
+            <Link
+              href="/auth/login"
+              className="font-medium hover:text-blue-600 transition"
+            >
               Login
             </Link>
 
-            <Link href="/auth/signup" className={linkClass("/auth/signup")}>
-            SignIn
+            <Link
+              href="/auth/signup"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              Sign Up
             </Link>
           </>
         ) : (
           <>
-            
+            <Link
+              href="/tasks"
+              title="Tasks"
+              className={linkClass("/tasks")}
+            >
+              <LayoutList size={20} />
+            </Link>
 
-            <Link href="/tasks" className={linkClass("/tasks")}>
-              <LayoutList/>
+            <Link
+              href="/pomodoro"
+              title="Pomodoro Timer"
+              className={linkClass("/pomodoro")}
+            >
+              <Timer size={20} />
             </Link>
-            
-            <Link href="/pomodoro" className={linkClass("/pomodoro")}>
-            
-              <Timer/>
-            </Link>
-            <Link href="/calender" className={linkClass("/calender")}>
-              
-              <Calendar/>
+
+            <Link
+              href="/calender"
+              title="Calendar"
+              className={linkClass("/calender")}
+            >
+              <Calendar size={20} />
             </Link>
           </>
-          
         )}
       </div>
 
-      {/* Right */}
-      <div className="flex flex-row gap-4">
-        {/* <button
-          onClick={toggleTheme}
-          className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800"
-        >
-          {theme === "dark" ? <Sun /> : <Moon />}
-        </button> */}
+      {/* User */}
+      <div className="flex items-center gap-4">
+        {isLoggedIn && (
+          <>
+            <span className="hidden sm:block font-medium text-gray-700">
+              Hi, {username} 👋
+            </span>
 
-        {isLoggedIn && <LogoutButton />}
+            <LogoutButton />
+          </>
+        )}
       </div>
     </nav>
   );
