@@ -14,7 +14,8 @@ async function getUserId(req: NextRequest) {
   }
 }
 
-// UPDATE TASK
+// ---------------- UPDATE TASK ----------------
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,11 +23,23 @@ export async function PATCH(
   const userId = await getUserId(req);
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { id } = await params;
   const body = await req.json();
+
+  const {
+    title,
+    description,
+    priority,
+    category,
+    dueDate,
+    completed,
+  } = body;
 
   // Check ownership
   const task = await prisma.task.findFirst({
@@ -44,14 +57,41 @@ export async function PATCH(
   }
 
   const updatedTask = await prisma.task.update({
-    where: { id },
-    data: body,
+    where: {
+      id,
+    },
+    data: {
+      ...(title !== undefined && {
+        title: title.trim(),
+      }),
+
+      ...(description !== undefined && {
+        description,
+      }),
+
+      ...(priority !== undefined && {
+        priority,
+      }),
+
+      ...(category !== undefined && {
+        category,
+      }),
+
+      ...(dueDate !== undefined && {
+        dueDate: dueDate ? new Date(dueDate) : null,
+      }),
+
+      ...(completed !== undefined && {
+        completed,
+      }),
+    },
   });
 
   return NextResponse.json(updatedTask);
 }
 
-// DELETE TASK
+// ---------------- DELETE TASK ----------------
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -59,7 +99,10 @@ export async function DELETE(
   const userId = await getUserId(req);
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { id } = await params;

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export type Task = {
   id: string;
   title: string;
+  description: string | null;
   completed: boolean;
   priority: "LOW" | "MEDIUM" | "HIGH";
   category: string | null;
@@ -15,7 +16,7 @@ export type Filter = "all" | "completed" | "pending";
 
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
+const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
 
   // ---------------- Fetch Tasks ----------------
@@ -59,25 +60,37 @@ export function useTasks() {
 
   // ---------------- Add ----------------
 
-  const addTask = async (title: string) => {
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title }),
-      });
+const addTask = async (
+  title: string,
+  description: string,
+  priority: "LOW" | "MEDIUM" | "HIGH",
+  category: string,
+  dueDate: string
+) => {
+  try {
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        priority,
+        category,
+        dueDate,
+      }),
+    });
 
-      if (!res.ok) {
-        throw new Error("Failed to create task");
-      }
-
-      await fetchTasks();
-    } catch (err) {
-      console.error(err);
+    if (!res.ok) {
+      throw new Error("Failed to create task");
     }
-  };
+
+    await fetchTasks();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // ---------------- Toggle ----------------
 
@@ -109,27 +122,38 @@ export function useTasks() {
 
   // ---------------- Edit ----------------
 
-  const editTask = async (id: string, newTitle: string) => {
-    try {
-      const res = await fetch(`/api/tasks/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: newTitle,
-        }),
-      });
+const editTask = async (
+  id: string,
+  title: string,
+  description: string,
+  priority: "LOW" | "MEDIUM" | "HIGH",
+  category: string,
+  dueDate: string
+) => {
+  try {
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        priority,
+        category,
+        dueDate,
+      }),
+    });
 
-      if (!res.ok) {
-        throw new Error("Failed to edit task");
-      }
-
-      await fetchTasks();
-    } catch (err) {
-      console.error(err);
+    if (!res.ok) {
+      throw new Error("Failed to update task");
     }
-  };
+
+    await fetchTasks();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // ---------------- Delete ----------------
 
@@ -184,20 +208,18 @@ export function useTasks() {
 
   const pending = total - completed;
 
-  return {
-    tasks: filteredTasks,
-    allTasks: tasks,
-    filter,
-    setFilter,
-    addTask,
-    toggleTask,
-    deleteTask,
-    editTask,
-    clearCompleted,
-    total,
-    completed,
-    pending,
-    loading,
-    refresh: fetchTasks,
-  };
+return {
+  tasks: filteredTasks,
+  allTasks: tasks,
+  filter,
+  setFilter,
+  addTask,
+  toggleTask,
+  deleteTask,
+  editTask,
+  clearCompleted,
+  total,
+  completed,
+  pending,
+};
 }

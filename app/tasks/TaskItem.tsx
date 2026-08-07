@@ -6,139 +6,185 @@ import { Trash2, Pencil, X, Save, Circle, CircleCheckBig } from "lucide-react";
 type Task = {
   id: string;
   title: string;
+  description: string | null;
   completed: boolean;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  category: string | null;
+  dueDate: string | null;
 };
 
 type Props = {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
-  onEdit: (newTitle: string) => void;
+  onEdit: (
+    title: string,
+    description: string,
+    priority: "LOW" | "MEDIUM" | "HIGH",
+    category: string,
+    dueDate: string,
+  ) => void;
 };
 
-export default function TaskItem({
-  task,
-  onToggle,
-  onDelete,
-  onEdit,
-}: Props) {
+export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.title);
+
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDescription, setEditDescription] = useState(
+    task.description || "",
+  );
+  const [editPriority, setEditPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(
+    task.priority,
+  );
+
+  const [editCategory, setEditCategory] = useState(task.category || "PERSONAL");
+
+  const [editDueDate, setEditDueDate] = useState(
+    task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+  );
 
   const handleSave = () => {
-    if (!editText.trim()) return;
+    if (!editTitle.trim()) return;
 
-    onEdit(editText.trim());
+    onEdit(editTitle, editDescription, editPriority, editCategory, editDueDate);
     setIsEditing(false);
   };
 
   return (
     <div
-      className={`
-        flex items-center justify-between gap-4
-        rounded-xl border p-4 shadow-sm
-        transition-all duration-300
-        hover:shadow-md hover:-translate-y-0.5
-        ${
-          task.completed
-            ? "bg-green-50 border-green-200"
-            : "bg-white border-gray-200"
-        }
-      `}
+      className={`flex items-start gap-4 rounded-xl border p-4 shadow-sm transition-all duration-300 hover:shadow-md ${
+        task.completed
+          ? "bg-green-50 border-green-200"
+          : "bg-white border-gray-200"
+      }`}
     >
-      {/* Left Side */}
-      <div className="flex items-center gap-3 flex-1">
-        <button
-          onClick={onToggle}
-          className="transition hover:scale-110"
-        >
-          {task.completed ? (
-            <CircleCheckBig
-              size={24}
-              className="text-green-600"
-            />
-          ) : (
-            <Circle
-              size={24}
-              className="text-gray-400 hover:text-blue-600"
-            />
-          )}
-        </button>
+      {/* Toggle Button */}
 
+      <button
+        onClick={onToggle}
+        className="mt-1 text-green-600 hover:scale-110 transition"
+      >
+        {task.completed ? <CircleCheckBig size={24} /> : <Circle size={24} />}
+      </button>
+
+      {/* Task Content */}
+
+      <div className="flex-1">
         {isEditing ? (
-          <input
-            value={editText}
-            autoFocus
-            onChange={(e) => setEditText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
+          <div className="space-y-3">
+            <input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Task title"
+              className="w-full rounded-lg border border-gray-300 p-2"
+            />
 
-              if (e.key === "Escape") {
-                setEditText(task.title);
-                setIsEditing(false);
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description"
+              className="w-full rounded-lg border border-gray-300 p-2"
+            />
+
+            <select
+              value={editPriority}
+              onChange={(e) =>
+                setEditPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH")
               }
-            }}
-            className="
-              flex-1
-              rounded-lg
-              border
-              border-blue-300
-              px-3
-              py-2
-              outline-none
-              focus:ring-2
-              focus:ring-blue-200
-            "
-          />
+              className="w-full rounded-lg border border-gray-300 p-2"
+            >
+              <option value="LOW">🟢 Low</option>
+              <option value="MEDIUM">🟠 Medium</option>
+              <option value="HIGH">🔴 High</option>
+            </select>
+
+            <select
+              value={editCategory}
+              onChange={(e) => setEditCategory(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2"
+            >
+              <option value="PERSONAL">🏠 Personal</option>
+              <option value="COLLEGE">🎓 College</option>
+              <option value="PLACEMENT">🚀 Placement</option>
+              <option value="WORK">💼 Work</option>
+            </select>
+
+            <input
+              type="date"
+              value={editDueDate}
+              onChange={(e) => setEditDueDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2"
+            />
+          </div>
         ) : (
-          <span
-            className={`
-              flex-1 cursor-pointer text-lg
-              transition-all duration-300
-              ${
-                task.completed
-                  ? "line-through text-gray-400"
-                  : "text-gray-800"
-              }
-            `}
-            onClick={onToggle}
-          >
-            {task.title}
-          </span>
+          <>
+            <h3
+              className={`text-lg font-semibold ${
+                task.completed ? "line-through text-gray-400" : "text-gray-900"
+              }`}
+            >
+              {task.title}
+            </h3>
+
+            {task.description && (
+              <p className="mt-1 text-sm text-gray-500">{task.description}</p>
+            )}
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                  task.priority === "HIGH"
+                    ? "bg-red-100 text-red-600"
+                    : task.priority === "MEDIUM"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                }`}
+              >
+                {task.priority}
+              </span>
+
+              {task.category && (
+                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                  {task.category}
+                </span>
+              )}
+
+              {task.dueDate && (
+                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
+                  📅 {new Date(task.dueDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Right Side */}
-      <div className="flex items-center gap-2">
+      {/* Action Buttons */}
+
+      <div className="flex gap-2">
         {isEditing ? (
           <>
             <button
               onClick={handleSave}
-              className="
-                rounded-lg
-                bg-green-500
-                p-2
-                text-white
-                transition
-                hover:bg-green-600
-              "
+              className="rounded-lg bg-green-500 p-2 text-white hover:bg-green-600"
             >
               <Save size={18} />
             </button>
 
             <button
               onClick={() => {
-                setEditText(task.title);
+                setEditTitle(task.title);
+                setEditDescription(task.description || "");
+                setEditPriority(task.priority);
+                setEditCategory(task.category || "PERSONAL");
+                setEditDueDate(
+                  task.dueDate
+                    ? new Date(task.dueDate).toISOString().split("T")[0]
+                    : "",
+                );
                 setIsEditing(false);
               }}
-              className="
-                rounded-lg
-                bg-gray-400
-                p-2
-                text-white
-                transition
-                hover:bg-gray-500
-              "
+              className="rounded-lg bg-gray-400 p-2 text-white hover:bg-gray-500"
             >
               <X size={18} />
             </button>
@@ -148,29 +194,18 @@ export default function TaskItem({
             <button
               onClick={() => setIsEditing(true)}
               disabled={task.completed}
-              className={`
-                rounded-lg
-                p-2
-                transition
-                ${
-                  task.completed
-                    ? "cursor-not-allowed text-gray-300"
-                    : "text-blue-600 hover:bg-blue-100"
-                }
-              `}
+              className={`rounded-lg p-2 ${
+                task.completed
+                  ? "cursor-not-allowed text-gray-300"
+                  : "text-blue-600 hover:bg-blue-100"
+              }`}
             >
               <Pencil size={18} />
             </button>
 
             <button
               onClick={onDelete}
-              className="
-                rounded-lg
-                p-2
-                text-red-600
-                transition
-                hover:bg-red-100
-              "
+              className="rounded-lg p-2 text-red-600 hover:bg-red-100"
             >
               <Trash2 size={18} />
             </button>

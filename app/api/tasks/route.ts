@@ -15,6 +15,8 @@ async function getUserId(req: NextRequest) {
   }
 }
 
+// ---------------- GET ALL TASKS ----------------
+
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);
 
@@ -26,7 +28,9 @@ export async function GET(req: NextRequest) {
   }
 
   const tasks = await prisma.task.findMany({
-    where: { userId },
+    where: {
+      userId,
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -34,6 +38,8 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(tasks);
 }
+
+// ---------------- CREATE TASK ----------------
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId(req);
@@ -47,7 +53,13 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  const { title } = body;
+  const {
+    title,
+    description,
+    priority,
+    category,
+    dueDate,
+  } = body;
 
   if (!title || !title.trim()) {
     return NextResponse.json(
@@ -58,10 +70,16 @@ export async function POST(req: NextRequest) {
 
   const task = await prisma.task.create({
     data: {
-      title,
+      title: title.trim(),
+      description,
+      priority: priority || "MEDIUM",
+      category: category || "PERSONAL",
+      dueDate: dueDate ? new Date(dueDate) : null,
       userId,
     },
   });
 
-  return NextResponse.json(task, { status: 201 });
+  return NextResponse.json(task, {
+    status: 201,
+  });
 }
