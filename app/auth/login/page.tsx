@@ -1,17 +1,16 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
 import {
-  Mail,
-  Lock,
   Eye,
   EyeOff,
   LogIn,
+  Loader2,
+  Mail,
+  Lock,
 } from "lucide-react";
-
-import login from "../../../public/login.jpg";
 
 export default function Login() {
   const router = useRouter();
@@ -24,179 +23,370 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
+  const handleLogin = async (
+    e?: FormEvent<HTMLFormElement>
+  ) => {
+    e?.preventDefault();
+
     setError("");
 
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           password,
         }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user || { email })
-        );
-
-        window.dispatchEvent(new Event("storage"));
-
-        router.push("/tasks");
-      } else {
+      if (!res.ok) {
         setError(data.error || "Login failed.");
+        return;
       }
-    } catch {
-      setError("Something went wrong.");
+
+      // Keep your existing localStorage authentication state.
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user || { email })
+      );
+
+      // Tell Navbar that login state changed.
+      window.dispatchEvent(new Event("storage"));
+
+      router.push("/tasks");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center relative flex items-center justify-center px-4"
-      style={{
-        backgroundImage: `url(${login.src})`,
-      }}
-    >
-      {/* Overlay */}
+    <main className="relative min-h-[calc(100vh-64px)] overflow-hidden">
+      {/* Background */}
 
-      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="
+          absolute
+          inset-0
+          bg-cover
+          bg-center
+        "
+        style={{
+          backgroundImage:
+            "url('/login.jpg')",
+        }}
+      />
 
-      {/* Card */}
+      {/* Dark overlay */}
 
-      <div className="relative z-10 w-full max-w-md rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 shadow-2xl p-8">
+      <div className="absolute inset-0 bg-black/50" />
 
-        <div className="text-center mb-8">
+      {/* Content */}
 
-          <div className="mx-auto w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mb-4">
-
-            <LogIn
-              className="text-white"
-              size={30}
-            />
-
-          </div>
-
-          <h1 className="text-3xl font-bold text-white">
-            Welcome Back
-          </h1>
-
-          <p className="text-gray-300 mt-2">
-            Login to continue managing your tasks.
-          </p>
-
-        </div>
-
-        {error && (
-          <div className="mb-5 rounded-lg bg-red-500/80 p-3 text-white text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Email */}
-
-        <div className="relative mb-4">
-
-          <Mail
-            className="absolute left-3 top-3.5 text-gray-300"
-            size={18}
-          />
-
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl bg-white/20 border border-white/20 py-3 pl-11 pr-4 text-white placeholder-gray-300 outline-none focus:ring-2 focus:ring-blue-400"
-          />
-
-        </div>
-
-        {/* Password */}
-
-        <div className="relative mb-6">
-
-          <Lock
-            className="absolute left-3 top-3.5 text-gray-300"
-            size={18}
-          />
-
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl bg-white/20 border border-white/20 py-3 pl-11 pr-12 text-white placeholder-gray-300 outline-none focus:ring-2 focus:ring-blue-400"
-          />
-
-          <button
-            type="button"
-            onClick={() =>
-              setShowPassword(!showPassword)
-            }
-            className="absolute right-3 top-3 text-gray-300"
-          >
-            {showPassword ? (
-              <EyeOff size={20} />
-            ) : (
-              <Eye size={20} />
-            )}
-          </button>
-
-        </div>
-
-        {/* Login Button */}
-
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      <div className="relative flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8">
+        <div
+          className="
+            w-full
+            max-w-md
+            rounded-2xl
+            border
+            border-white/20
+            bg-black/40
+            p-6
+            shadow-2xl
+            backdrop-blur-md
+            sm:p-8
+          "
         >
-          {loading ? "Logging In..." : "Login"}
-        </button>
+          {/* Header */}
 
-        {/* Divider */}
+          <div className="mb-7 text-center">
+            <div
+              className="
+                mx-auto
+                mb-4
+                flex
+                h-14
+                w-14
+                items-center
+                justify-center
+                rounded-2xl
+                bg-blue-600
+                text-white
+                shadow-lg
+              "
+            >
+              <LogIn size={26} />
+            </div>
 
-        <div className="flex items-center my-6">
-          <div className="flex-1 border-t border-white/20"></div>
-          <span className="px-3 text-gray-300 text-sm">
-            OR
-          </span>
-          <div className="flex-1 border-t border-white/20"></div>
-        </div>
+            <h1 className="text-3xl font-bold text-white">
+              Welcome Back
+            </h1>
 
-        {/* Signup */}
+            <p className="mt-2 text-sm text-gray-300">
+              Login to continue to TaskBoard.
+            </p>
+          </div>
 
-        <p className="text-center text-gray-200">
+          {/* Error */}
 
-          Don't have an account?{" "}
+          {error && (
+            <div
+              role="alert"
+              className="
+                mb-5
+                rounded-lg
+                border
+                border-red-400/30
+                bg-red-500/20
+                px-4
+                py-3
+                text-sm
+                text-red-200
+              "
+            >
+              {error}
+            </div>
+          )}
 
-          <Link
-            href="/auth/signup"
-            className="font-semibold text-blue-300 hover:underline"
+          {/* Form */}
+
+          <form
+            onSubmit={handleLogin}
+            className="space-y-5"
           >
-            Create Account
-          </Link>
+            {/* Email */}
 
-        </p>
+            <div>
+              <label
+                htmlFor="email"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-gray-200
+                "
+              >
+                Email
+              </label>
 
+              <div className="relative">
+                <Mail
+                  size={18}
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-3
+                    top-1/2
+                    -translate-y-1/2
+                    text-gray-400
+                  "
+                />
+
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  disabled={loading}
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-white/20
+                    bg-white/10
+                    py-3
+                    pl-10
+                    pr-4
+                    text-white
+                    placeholder:text-gray-400
+                    outline-none
+                    transition
+                    focus:border-blue-400
+                    focus:ring-2
+                    focus:ring-blue-400/30
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                  "
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+
+            <div>
+              <label
+                htmlFor="password"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-gray-200
+                "
+              >
+                Password
+              </label>
+
+              <div className="relative">
+                <Lock
+                  size={18}
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-3
+                    top-1/2
+                    -translate-y-1/2
+                    text-gray-400
+                  "
+                />
+
+                <input
+                  id="password"
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  disabled={loading}
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-white/20
+                    bg-white/10
+                    py-3
+                    pl-10
+                    pr-12
+                    text-white
+                    placeholder:text-gray-400
+                    outline-none
+                    transition
+                    focus:border-blue-400
+                    focus:ring-2
+                    focus:ring-blue-400/30
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                  "
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword(
+                      (previous) => !previous
+                    )
+                  }
+                  disabled={loading}
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                  className="
+                    absolute
+                    right-3
+                    top-1/2
+                    -translate-y-1/2
+                    text-gray-400
+                    transition
+                    hover:text-white
+                  "
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Login Button */}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="
+                flex
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                bg-blue-600
+                px-4
+                py-3
+                font-semibold
+                text-white
+                shadow-lg
+                transition-all
+                hover:bg-blue-700
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+            >
+              {loading ? (
+                <>
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  Login
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Signup */}
+
+          <p className="mt-6 text-center text-sm text-gray-300">
+            Don't have an account?{" "}
+            <Link
+              href="/auth/signup"
+              className="
+                font-medium
+                text-blue-400
+                hover:text-blue-300
+                hover:underline
+              "
+            >
+              Create an account
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

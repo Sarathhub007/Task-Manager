@@ -1,7 +1,7 @@
 "use client";
 
 import TaskItem from "./TaskItem";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Task = {
   id: string;
@@ -35,14 +35,26 @@ export default function TaskList({
 }: Props) {
   return (
     <ul className="mt-4 space-y-3">
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {tasks.map((task) => (
           <motion.li
             key={task.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
+            layout
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -10,
+            }}
+            transition={{
+              duration: 0.2,
+            }}
           >
             <TaskItem
               task={task}

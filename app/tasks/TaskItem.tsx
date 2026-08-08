@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Pencil, X, Save, Circle, CircleCheckBig } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Trash2,
+  Pencil,
+  X,
+  Save,
+  Circle,
+  CircleCheckBig,
+} from "lucide-react";
 
 type Task = {
   id: string;
@@ -22,136 +29,440 @@ type Props = {
     description: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
     category: string,
-    dueDate: string,
+    dueDate: string
   ) => void;
 };
 
-export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
+export default function TaskItem({
+  task,
+  onToggle,
+  onDelete,
+  onEdit,
+}: Props) {
   const [isEditing, setIsEditing] = useState(false);
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(
-    task.description || "",
-  );
-  const [editPriority, setEditPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(
-    task.priority,
+    task.description || ""
   );
 
-  const [editCategory, setEditCategory] = useState(task.category || "PERSONAL");
+  const [editPriority, setEditPriority] = useState<
+    "LOW" | "MEDIUM" | "HIGH"
+  >(task.priority);
+
+  const [editCategory, setEditCategory] = useState(
+    task.category || "PERSONAL"
+  );
 
   const [editDueDate, setEditDueDate] = useState(
-    task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+    task.dueDate
+      ? new Date(task.dueDate).toISOString().split("T")[0]
+      : ""
   );
 
-  const handleSave = () => {
-    if (!editTitle.trim()) return;
+  // Keep edit fields synchronized if the task
+  // changes outside this component.
+  useEffect(() => {
+    if (!isEditing) {
+      setEditTitle(task.title);
+      setEditDescription(task.description || "");
+      setEditPriority(task.priority);
+      setEditCategory(task.category || "PERSONAL");
+      setEditDueDate(
+        task.dueDate
+          ? new Date(task.dueDate)
+              .toISOString()
+              .split("T")[0]
+          : ""
+      );
+    }
+  }, [task, isEditing]);
 
-    onEdit(editTitle, editDescription, editPriority, editCategory, editDueDate);
+  const resetEditFields = () => {
+    setEditTitle(task.title);
+    setEditDescription(task.description || "");
+    setEditPriority(task.priority);
+    setEditCategory(task.category || "PERSONAL");
+    setEditDueDate(
+      task.dueDate
+        ? new Date(task.dueDate)
+            .toISOString()
+            .split("T")[0]
+        : ""
+    );
+  };
+
+  const handleEdit = () => {
+    if (task.completed) return;
+
+    resetEditFields();
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    const title = editTitle.trim();
+
+    if (!title) return;
+
+    onEdit(
+      title,
+      editDescription.trim(),
+      editPriority,
+      editCategory,
+      editDueDate
+    );
+
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    resetEditFields();
     setIsEditing(false);
   };
 
   return (
     <div
-      className={`flex items-start gap-4 rounded-xl border p-4 shadow-sm transition-all duration-300 hover:shadow-md ${
-        task.completed
-          ? "bg-green-50 border-green-200"
-          : "bg-white border-gray-200"
-      }`}
+      className={`
+        flex
+        items-start
+        gap-4
+        rounded-xl
+        border
+        p-4
+        shadow-sm
+        transition-all
+        duration-300
+        hover:shadow-md
+
+        ${
+          task.completed
+            ? "border-green-200 bg-green-50"
+            : "border-gray-200 bg-white"
+        }
+      `}
     >
-      {/* Toggle Button */}
+      {/* ================= TOGGLE ================= */}
 
       <button
+        type="button"
         onClick={onToggle}
-        className="mt-1 text-green-600 hover:scale-110 transition"
+        className="
+          mt-1
+          shrink-0
+          text-green-600
+          transition
+          hover:scale-110
+        "
+        aria-label={
+          task.completed
+            ? "Mark task as pending"
+            : "Mark task as completed"
+        }
       >
-        {task.completed ? <CircleCheckBig size={24} /> : <Circle size={24} />}
+        {task.completed ? (
+          <CircleCheckBig size={24} />
+        ) : (
+          <Circle size={24} />
+        )}
       </button>
 
-      {/* Task Content */}
+      {/* ================= CONTENT ================= */}
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         {isEditing ? (
           <div className="space-y-3">
+            {/* Title */}
+
             <input
+              type="text"
               value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
+              onChange={(e) =>
+                setEditTitle(e.target.value)
+              }
               placeholder="Task title"
-              className="w-full rounded-lg border border-gray-300 p-2"
+              autoFocus
+              className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                px-3
+                py-2
+                text-gray-900
+                outline-none
+                transition
+                focus:border-blue-500
+                focus:ring-2
+                focus:ring-blue-200
+              "
             />
+
+            {/* Description */}
 
             <textarea
               value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Description"
-              className="w-full rounded-lg border border-gray-300 p-2"
+              onChange={(e) =>
+                setEditDescription(e.target.value)
+              }
+              placeholder="Description (optional)"
+              rows={3}
+              className="
+                w-full
+                resize-none
+                rounded-lg
+                border
+                border-gray-300
+                px-3
+                py-2
+                text-gray-900
+                outline-none
+                transition
+                focus:border-blue-500
+                focus:ring-2
+                focus:ring-blue-200
+              "
             />
+
+            {/* Priority */}
 
             <select
               value={editPriority}
               onChange={(e) =>
-                setEditPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH")
+                setEditPriority(
+                  e.target.value as
+                    | "LOW"
+                    | "MEDIUM"
+                    | "HIGH"
+                )
               }
-              className="w-full rounded-lg border border-gray-300 p-2"
+              className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2
+                text-gray-900
+                outline-none
+                focus:border-blue-500
+                focus:ring-2
+                focus:ring-blue-200
+              "
             >
-              <option value="LOW">🟢 Low</option>
-              <option value="MEDIUM">🟠 Medium</option>
-              <option value="HIGH">🔴 High</option>
+              <option value="LOW">
+                🟢 Low
+              </option>
+
+              <option value="MEDIUM">
+                🟠 Medium
+              </option>
+
+              <option value="HIGH">
+                🔴 High
+              </option>
             </select>
+
+            {/* Category */}
 
             <select
               value={editCategory}
-              onChange={(e) => setEditCategory(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2"
+              onChange={(e) =>
+                setEditCategory(e.target.value)
+              }
+              className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2
+                text-gray-900
+                outline-none
+                focus:border-blue-500
+                focus:ring-2
+                focus:ring-blue-200
+              "
             >
-              <option value="PERSONAL">🏠 Personal</option>
-              <option value="COLLEGE">🎓 College</option>
-              <option value="PLACEMENT">🚀 Placement</option>
-              <option value="WORK">💼 Work</option>
+              <option value="PERSONAL">
+                🏠 Personal
+              </option>
+
+              <option value="COLLEGE">
+                🎓 College
+              </option>
+
+              <option value="PLACEMENT">
+                🚀 Placement
+              </option>
+
+              <option value="WORK">
+                💼 Work
+              </option>
             </select>
+
+            {/* Due Date */}
 
             <input
               type="date"
               value={editDueDate}
-              onChange={(e) => setEditDueDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2"
+              onChange={(e) =>
+                setEditDueDate(e.target.value)
+              }
+              className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                px-3
+                py-2
+                text-gray-900
+                outline-none
+                focus:border-blue-500
+                focus:ring-2
+                focus:ring-blue-200
+              "
             />
+
+            {/* Edit Actions */}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  bg-gray-100
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-gray-700
+                  transition
+                  hover:bg-gray-200
+                "
+              >
+                <X size={16} />
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!editTitle.trim()}
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  bg-blue-600
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-white
+                  transition
+                  hover:bg-blue-700
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                <Save size={16} />
+                Save
+              </button>
+            </div>
           </div>
         ) : (
           <>
+            {/* Title */}
+
             <h3
-              className={`text-lg font-semibold ${
-                task.completed ? "line-through text-gray-400" : "text-gray-900"
-              }`}
+              className={`
+                text-lg
+                font-semibold
+
+                ${
+                  task.completed
+                    ? "text-gray-400 line-through"
+                    : "text-gray-900"
+                }
+              `}
             >
               {task.title}
             </h3>
 
+            {/* Description */}
+
             {task.description && (
-              <p className="mt-1 text-sm text-gray-500">{task.description}</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {task.description}
+              </p>
             )}
 
+            {/* Metadata */}
+
             <div className="mt-3 flex flex-wrap gap-2">
+              {/* Priority */}
+
               <span
-                className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                  task.priority === "HIGH"
-                    ? "bg-red-100 text-red-600"
-                    : task.priority === "MEDIUM"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-green-100 text-green-700"
-                }`}
+                className={`
+                  rounded-full
+                  px-2
+                  py-1
+                  text-xs
+                  font-semibold
+
+                  ${
+                    task.priority === "HIGH"
+                      ? "bg-red-100 text-red-600"
+                      : task.priority === "MEDIUM"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-700"
+                  }
+                `}
               >
                 {task.priority}
               </span>
 
+              {/* Category */}
+
               {task.category && (
-                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                <span
+                  className="
+                    rounded-full
+                    bg-blue-100
+                    px-2
+                    py-1
+                    text-xs
+                    font-semibold
+                    text-blue-700
+                  "
+                >
                   {task.category}
                 </span>
               )}
 
+              {/* Due Date */}
+
               {task.dueDate && (
-                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
-                  📅 {new Date(task.dueDate).toLocaleDateString()}
+                <span
+                  className="
+                    rounded-full
+                    bg-gray-100
+                    px-2
+                    py-1
+                    text-xs
+                    text-gray-700
+                  "
+                >
+                  📅{" "}
+                  {new Date(
+                    task.dueDate
+                  ).toLocaleDateString()}
                 </span>
               )}
             </div>
@@ -159,53 +470,50 @@ export default function TaskItem({ task, onToggle, onDelete, onEdit }: Props) {
         )}
       </div>
 
-      {/* Action Buttons */}
+      {/* ================= ACTIONS ================= */}
 
-      <div className="flex gap-2">
-        {isEditing ? (
+      <div className="flex shrink-0 gap-2">
+        {isEditing ? null : (
           <>
-            <button
-              onClick={handleSave}
-              className="rounded-lg bg-green-500 p-2 text-white hover:bg-green-600"
-            >
-              <Save size={18} />
-            </button>
+            {/* Edit */}
 
             <button
-              onClick={() => {
-                setEditTitle(task.title);
-                setEditDescription(task.description || "");
-                setEditPriority(task.priority);
-                setEditCategory(task.category || "PERSONAL");
-                setEditDueDate(
-                  task.dueDate
-                    ? new Date(task.dueDate).toISOString().split("T")[0]
-                    : "",
-                );
-                setIsEditing(false);
-              }}
-              className="rounded-lg bg-gray-400 p-2 text-white hover:bg-gray-500"
-            >
-              <X size={18} />
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setIsEditing(true)}
+              type="button"
+              onClick={handleEdit}
               disabled={task.completed}
-              className={`rounded-lg p-2 ${
+              title={
                 task.completed
-                  ? "cursor-not-allowed text-gray-300"
-                  : "text-blue-600 hover:bg-blue-100"
-              }`}
+                  ? "Completed tasks cannot be edited"
+                  : "Edit task"
+              }
+              className={`
+                rounded-lg
+                p-2
+                transition
+
+                ${
+                  task.completed
+                    ? "cursor-not-allowed text-gray-300"
+                    : "text-blue-600 hover:bg-blue-100"
+                }
+              `}
             >
               <Pencil size={18} />
             </button>
 
+            {/* Delete */}
+
             <button
+              type="button"
               onClick={onDelete}
-              className="rounded-lg p-2 text-red-600 hover:bg-red-100"
+              title="Delete task"
+              className="
+                rounded-lg
+                p-2
+                text-red-600
+                transition
+                hover:bg-red-100
+              "
             >
               <Trash2 size={18} />
             </button>

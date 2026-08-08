@@ -5,223 +5,254 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Coffee,
-  Briefcase,
+  Timer,
 } from "lucide-react";
 
-import timer from "../../public/timer.jpg";
+const INITIAL_TIME = 25 * 60;
 
-const WORK = 25 * 60;
-const SHORT_BREAK = 5 * 60;
-const LONG_BREAK = 15 * 60;
-
-export default function Pomodoro() {
-  const [seconds, setSeconds] = useState(WORK);
+export default function PomodoroPage() {
+  const [seconds, setSeconds] = useState(INITIAL_TIME);
   const [isRunning, setIsRunning] = useState(false);
-  const [mode, setMode] = useState<"work" | "short" | "long">("work");
+
+  // ---------------- Timer ----------------
 
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
+      setSeconds((previous) => {
+        if (previous <= 1) {
           setIsRunning(false);
-          alert("🎉 Time's Up!");
           return 0;
         }
 
-        return prev - 1;
+        return previous - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
   }, [isRunning]);
 
+  // ---------------- Time ----------------
+
   const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
 
-  const totalSeconds =
-    mode === "work"
-      ? WORK
-      : mode === "short"
-      ? SHORT_BREAK
-      : LONG_BREAK;
+  const remainingSeconds = seconds % 60;
 
-  const progress = (seconds / totalSeconds) * 100;
+  const formattedTime = `${minutes
+    .toString()
+    .padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
 
-  const changeMode = (
-    newMode: "work" | "short" | "long",
-    value: number
-  ) => {
-    setMode(newMode);
-    setSeconds(value);
+  // ---------------- Progress ----------------
+
+  const progress =
+    ((INITIAL_TIME - seconds) / INITIAL_TIME) * 100;
+
+  // ---------------- Reset ----------------
+
+  const handleReset = () => {
     setIsRunning(false);
+    setSeconds(INITIAL_TIME);
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center relative flex items-center justify-center"
-      style={{
-        backgroundImage: `url(${timer.src})`,
-      }}
+    <main
+      className="
+        min-h-[calc(100vh-64px)]
+        flex
+        items-center
+        justify-center
+        bg-gray-50
+        px-4
+        py-8
+      "
     >
-      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="
+          w-full
+          max-w-md
+          rounded-3xl
+          border
+          border-gray-200
+          bg-white
+          p-6
+          shadow-lg
+          sm:p-8
+        "
+      >
+        {/* ================= HEADER ================= */}
 
-      <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-10 w-[420px] text-center">
-
-        <h1 className="text-4xl font-bold mb-2">
-          🍅 Pomodoro Timer
-        </h1>
-
-        <p className="text-gray-600 mb-8">
-          Stay focused and productive.
-        </p>
-
-        {/* Mode Buttons */}
-
-        <div className="flex justify-center gap-3 mb-8">
-
-          <button
-            onClick={() => changeMode("work", WORK)}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              mode === "work"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
-            }`}
+        <div className="mb-8 text-center">
+          <div
+            className="
+              mx-auto
+              mb-3
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-xl
+              bg-blue-100
+              text-blue-600
+            "
           >
-            <Briefcase className="inline mr-2" size={18} />
-            Work
-          </button>
+            <Timer size={25} />
+          </div>
 
-          <button
-            onClick={() =>
-              changeMode("short", SHORT_BREAK)
-            }
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              mode === "short"
-                ? "bg-green-600 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            <Coffee className="inline mr-2" size={18} />
-            Break
-          </button>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Focus Mode
+          </h1>
 
-          <button
-            onClick={() =>
-              changeMode("long", LONG_BREAK)
-            }
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              mode === "long"
-                ? "bg-purple-600 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            🌙 Long
-          </button>
-
+          <p className="mt-1 text-sm text-gray-500">
+            Stay focused for 25 minutes.
+          </p>
         </div>
 
-        {/* Progress Ring */}
+        {/* ================= TIMER ================= */}
 
-        <div className="relative w-64 h-64 mx-auto mb-8">
+        <div className="relative mx-auto mb-8 flex h-64 w-64 items-center justify-center">
+          {/* Progress Ring */}
 
           <svg
-            className="absolute inset-0 -rotate-90"
-            width="256"
-            height="256"
+            className="absolute inset-0 h-full w-full -rotate-90"
+            viewBox="0 0 100 100"
           >
-            <circle
-              cx="128"
-              cy="128"
-              r="110"
-              stroke="#e5e7eb"
-              strokeWidth="12"
-              fill="none"
-            />
+            {/* Background */}
 
             <circle
-              cx="128"
-              cy="128"
-              r="110"
-              stroke="#2563eb"
-              strokeWidth="12"
+              cx="50"
+              cy="50"
+              r="44"
               fill="none"
-              strokeDasharray={691}
-              strokeDashoffset={
-                691 - (691 * progress) / 100
-              }
+              stroke="currentColor"
+              strokeWidth="5"
+              className="text-gray-100"
+            />
+
+            {/* Progress */}
+
+            <circle
+              cx="50"
+              cy="50"
+              r="44"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="5"
               strokeLinecap="round"
-              className="transition-all duration-1000"
+              className="text-blue-600 transition-all duration-500"
+              strokeDasharray="276.46"
+              strokeDashoffset={
+                276.46 -
+                (276.46 * progress) / 100
+              }
             />
           </svg>
 
-          <div className="absolute inset-0 flex items-center justify-center">
+          {/* Timer Text */}
 
-            <div>
+          <div className="relative text-center">
+            <p className="text-xs font-medium uppercase tracking-widest text-gray-400">
+              {seconds === 0
+                ? "Complete"
+                : isRunning
+                  ? "Focus"
+                  : "Ready"}
+            </p>
 
-              <div className="text-6xl font-bold">
-
-                {minutes}:
-                {remaining
-                  .toString()
-                  .padStart(2, "0")}
-
-              </div>
-
-              <p className="mt-2 text-gray-500">
-
-                {mode === "work"
-                  ? "Focus Time"
-                  : mode === "short"
-                  ? "Short Break"
-                  : "Long Break"}
-
-              </p>
-
+            <div className="mt-1 text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+              {formattedTime}
             </div>
 
+            <p className="mt-2 text-xs text-gray-400">
+              25 minute session
+            </p>
           </div>
-
         </div>
 
-        {/* Controls */}
+        {/* ================= CONTROLS ================= */}
 
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-3">
+          {/* Start / Pause */}
 
           <button
-            onClick={() => setIsRunning(true)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+            type="button"
+            onClick={() =>
+              setIsRunning((previous) => !previous)
+            }
+            disabled={seconds === 0}
+            className="
+              inline-flex
+              items-center
+              gap-2
+              rounded-xl
+              bg-blue-600
+              px-6
+              py-3
+              font-semibold
+              text-white
+              shadow-sm
+              transition
+              hover:bg-blue-700
+              active:scale-95
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
           >
-            <Play size={18} />
-            Start
+            {isRunning ? (
+              <>
+                <Pause size={18} />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play size={18} />
+                Start
+              </>
+            )}
           </button>
 
-          <button
-            onClick={() => setIsRunning(false)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 transition"
-          >
-            <Pause size={18} />
-            Pause
-          </button>
+          {/* Reset */}
 
           <button
-            onClick={() => {
-              setIsRunning(false);
-
-              setSeconds(totalSeconds);
-            }}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 transition"
+            type="button"
+            onClick={handleReset}
+            className="
+              inline-flex
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-gray-200
+              bg-gray-100
+              px-5
+              py-3
+              font-semibold
+              text-gray-700
+              transition
+              hover:bg-gray-200
+              active:scale-95
+            "
           >
             <RotateCcw size={18} />
             Reset
           </button>
-
         </div>
 
+        {/* ================= STATUS ================= */}
+
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-400">
+            {seconds === 0
+              ? "🎉 Great work! Session completed."
+              : isRunning
+                ? "Stay focused. You've got this."
+                : "Press Start when you're ready."}
+          </p>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

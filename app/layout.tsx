@@ -1,34 +1,26 @@
-"use client";
+import type { Metadata } from "next";
 import "./globals.css";
-import { AnimatePresence, motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+
 import Navbar from "./Layout/navabar";
 
+export const metadata: Metadata = {
+  title: "TaskBoard",
+  description: "Organize your tasks, stay focused, and get things done.",
+};
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  const pathname = usePathname();
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning={true}>
-      <body suppressHydrationWarning={true}>
-  
-          <div className="h-screen">
-            <Navbar />
-            <AnimatePresence mode="wait">
-              <motion.main
-                key={pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-              ></motion.main>
-            </AnimatePresence>
-            {children}
-          </div>
-    
+    <html lang="en">
+      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+        <Navbar />
+
+        <main className="min-h-[calc(100vh-64px)]">
+          {children}
+        </main>
       </body>
     </html>
   );
