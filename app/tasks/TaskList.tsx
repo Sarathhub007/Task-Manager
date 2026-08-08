@@ -1,7 +1,6 @@
 "use client";
 
 import TaskItem from "./TaskItem";
-import { AnimatePresence, motion } from "framer-motion";
 
 type Task = {
   id: string;
@@ -15,15 +14,22 @@ type Task = {
 
 type Props = {
   tasks: Task[];
+
   onToggle: (id: string) => void;
+
   onDelete: (id: string) => void;
+
+  onSelect: (task: Task) => void;
+
+  selectedTaskId: string | null;
+
   onEdit: (
     id: string,
     title: string,
     description: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
     category: string,
-    dueDate: string
+    dueDate: string,
   ) => void;
 };
 
@@ -31,55 +37,49 @@ export default function TaskList({
   tasks,
   onToggle,
   onDelete,
+  onSelect,
+  selectedTaskId,
   onEdit,
 }: Props) {
   return (
-    <ul className="mt-4 space-y-3">
-      <AnimatePresence mode="popLayout">
-        {tasks.map((task) => (
-          <motion.li
-            key={task.id}
-            layout
-            initial={{
-              opacity: 0,
-              y: 10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-            }}
-            transition={{
-              duration: 0.2,
-            }}
-          >
-            <TaskItem
-              task={task}
-              onToggle={() => onToggle(task.id)}
-              onDelete={() => onDelete(task.id)}
-              onEdit={(
+    <div className="space-y-3">
+      {tasks.map((task) => (
+        <div
+          key={task.id}
+          className={`
+            rounded-xl
+            transition-all
+            ${
+              selectedTaskId === task.id
+                ? "ring-2 ring-blue-500 ring-offset-2"
+                : ""
+            }
+          `}
+        >
+          <TaskItem
+            task={task}
+            onToggle={() => onToggle(task.id)}
+            onDelete={() => onDelete(task.id)}
+            onSelect={() => onSelect(task)}
+            onEdit={(
+              title,
+              description,
+              priority,
+              category,
+              dueDate,
+            ) =>
+              onEdit(
+                task.id,
                 title,
                 description,
                 priority,
                 category,
-                dueDate
-              ) =>
-                onEdit(
-                  task.id,
-                  title,
-                  description,
-                  priority,
-                  category,
-                  dueDate
-                )
-              }
-            />
-          </motion.li>
-        ))}
-      </AnimatePresence>
-    </ul>
+                dueDate,
+              )
+            }
+          />
+        </div>
+      ))}
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Trash2,
   Pencil,
@@ -24,12 +24,13 @@ type Props = {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
+  onSelect: () => void;
   onEdit: (
     title: string,
     description: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
     category: string,
-    dueDate: string
+    dueDate: string,
   ) => void;
 };
 
@@ -37,13 +38,15 @@ export default function TaskItem({
   task,
   onToggle,
   onDelete,
+  onSelect,
   onEdit,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
 
   const [editTitle, setEditTitle] = useState(task.title);
+
   const [editDescription, setEditDescription] = useState(
-    task.description || ""
+    task.description || "",
   );
 
   const [editPriority, setEditPriority] = useState<
@@ -51,32 +54,14 @@ export default function TaskItem({
   >(task.priority);
 
   const [editCategory, setEditCategory] = useState(
-    task.category || "PERSONAL"
+    task.category || "PERSONAL",
   );
 
   const [editDueDate, setEditDueDate] = useState(
     task.dueDate
       ? new Date(task.dueDate).toISOString().split("T")[0]
-      : ""
+      : "",
   );
-
-  // Keep edit fields synchronized if the task
-  // changes outside this component.
-  useEffect(() => {
-    if (!isEditing) {
-      setEditTitle(task.title);
-      setEditDescription(task.description || "");
-      setEditPriority(task.priority);
-      setEditCategory(task.category || "PERSONAL");
-      setEditDueDate(
-        task.dueDate
-          ? new Date(task.dueDate)
-              .toISOString()
-              .split("T")[0]
-          : ""
-      );
-    }
-  }, [task, isEditing]);
 
   const resetEditFields = () => {
     setEditTitle(task.title);
@@ -85,31 +70,20 @@ export default function TaskItem({
     setEditCategory(task.category || "PERSONAL");
     setEditDueDate(
       task.dueDate
-        ? new Date(task.dueDate)
-            .toISOString()
-            .split("T")[0]
-        : ""
+        ? new Date(task.dueDate).toISOString().split("T")[0]
+        : "",
     );
   };
 
-  const handleEdit = () => {
-    if (task.completed) return;
-
-    resetEditFields();
-    setIsEditing(true);
-  };
-
   const handleSave = () => {
-    const title = editTitle.trim();
-
-    if (!title) return;
+    if (!editTitle.trim()) return;
 
     onEdit(
-      title,
+      editTitle.trim(),
       editDescription.trim(),
       editPriority,
       editCategory,
-      editDueDate
+      editDueDate,
     );
 
     setIsEditing(false);
@@ -122,37 +96,18 @@ export default function TaskItem({
 
   return (
     <div
-      className={`
-        flex
-        items-start
-        gap-4
-        rounded-xl
-        border
-        p-4
-        shadow-sm
-        transition-all
-        duration-300
-        hover:shadow-md
-
-        ${
-          task.completed
-            ? "border-green-200 bg-green-50"
-            : "border-gray-200 bg-white"
-        }
-      `}
+      className={`flex items-start gap-4 rounded-xl border p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
+        task.completed
+          ? "border-green-200 bg-green-50"
+          : "border-gray-200 bg-white"
+      }`}
     >
-      {/* ================= TOGGLE ================= */}
+      {/* Toggle */}
 
       <button
         type="button"
         onClick={onToggle}
-        className="
-          mt-1
-          shrink-0
-          text-green-600
-          transition
-          hover:scale-110
-        "
+        className="mt-1 shrink-0 text-green-600 transition hover:scale-110"
         aria-label={
           task.completed
             ? "Mark task as pending"
@@ -166,31 +121,38 @@ export default function TaskItem({
         )}
       </button>
 
-      {/* ================= CONTENT ================= */}
+      {/* Task Content */}
 
-      <div className="min-w-0 flex-1">
+      <div
+        className="min-w-0 flex-1 cursor-pointer"
+        onClick={() => {
+          if (!isEditing) {
+            onSelect();
+          }
+        }}
+      >
         {isEditing ? (
-          <div className="space-y-3">
+          <div
+            className="space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Title */}
 
             <input
-              type="text"
               value={editTitle}
               onChange={(e) =>
                 setEditTitle(e.target.value)
               }
               placeholder="Task title"
-              autoFocus
               className="
                 w-full
                 rounded-lg
                 border
                 border-gray-300
-                px-3
-                py-2
+                bg-white
+                p-2
                 text-gray-900
                 outline-none
-                transition
                 focus:border-blue-500
                 focus:ring-2
                 focus:ring-blue-200
@@ -204,7 +166,7 @@ export default function TaskItem({
               onChange={(e) =>
                 setEditDescription(e.target.value)
               }
-              placeholder="Description (optional)"
+              placeholder="Description"
               rows={3}
               className="
                 w-full
@@ -212,11 +174,10 @@ export default function TaskItem({
                 rounded-lg
                 border
                 border-gray-300
-                px-3
-                py-2
+                bg-white
+                p-2
                 text-gray-900
                 outline-none
-                transition
                 focus:border-blue-500
                 focus:ring-2
                 focus:ring-blue-200
@@ -232,7 +193,7 @@ export default function TaskItem({
                   e.target.value as
                     | "LOW"
                     | "MEDIUM"
-                    | "HIGH"
+                    | "HIGH",
                 )
               }
               className="
@@ -241,13 +202,8 @@ export default function TaskItem({
                 border
                 border-gray-300
                 bg-white
-                px-3
-                py-2
+                p-2
                 text-gray-900
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-200
               "
             >
               <option value="LOW">
@@ -276,13 +232,8 @@ export default function TaskItem({
                 border
                 border-gray-300
                 bg-white
-                px-3
-                py-2
+                p-2
                 text-gray-900
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-200
               "
             >
               <option value="PERSONAL">
@@ -315,19 +266,37 @@ export default function TaskItem({
                 rounded-lg
                 border
                 border-gray-300
-                px-3
-                py-2
+                bg-white
+                p-2
                 text-gray-900
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-200
               "
             />
 
             {/* Edit Actions */}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  bg-green-500
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-white
+                  transition
+                  hover:bg-green-600
+                "
+              >
+                <Save size={16} />
+                Save
+              </button>
+
               <button
                 type="button"
                 onClick={handleCancel}
@@ -336,43 +305,18 @@ export default function TaskItem({
                   items-center
                   gap-2
                   rounded-lg
-                  bg-gray-100
-                  px-4
-                  py-2
-                  text-sm
-                  font-medium
-                  text-gray-700
-                  transition
-                  hover:bg-gray-200
-                "
-              >
-                <X size={16} />
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!editTitle.trim()}
-                className="
-                  inline-flex
-                  items-center
-                  gap-2
-                  rounded-lg
-                  bg-blue-600
+                  bg-gray-400
                   px-4
                   py-2
                   text-sm
                   font-medium
                   text-white
                   transition
-                  hover:bg-blue-700
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
+                  hover:bg-gray-500
                 "
               >
-                <Save size={16} />
-                Save
+                <X size={16} />
+                Cancel
               </button>
             </div>
           </div>
@@ -381,16 +325,11 @@ export default function TaskItem({
             {/* Title */}
 
             <h3
-              className={`
-                text-lg
-                font-semibold
-
-                ${
-                  task.completed
-                    ? "text-gray-400 line-through"
-                    : "text-gray-900"
-                }
-              `}
+              className={`text-lg font-semibold ${
+                task.completed
+                  ? "text-gray-400 line-through"
+                  : "text-gray-900"
+              }`}
             >
               {task.title}
             </h3>
@@ -409,21 +348,13 @@ export default function TaskItem({
               {/* Priority */}
 
               <span
-                className={`
-                  rounded-full
-                  px-2
-                  py-1
-                  text-xs
-                  font-semibold
-
-                  ${
-                    task.priority === "HIGH"
-                      ? "bg-red-100 text-red-600"
-                      : task.priority === "MEDIUM"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-green-100 text-green-700"
-                  }
-                `}
+                className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                  task.priority === "HIGH"
+                    ? "bg-red-100 text-red-600"
+                    : task.priority === "MEDIUM"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                }`}
               >
                 {task.priority}
               </span>
@@ -431,17 +362,7 @@ export default function TaskItem({
               {/* Category */}
 
               {task.category && (
-                <span
-                  className="
-                    rounded-full
-                    bg-blue-100
-                    px-2
-                    py-1
-                    text-xs
-                    font-semibold
-                    text-blue-700
-                  "
-                >
+                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
                   {task.category}
                 </span>
               )}
@@ -449,19 +370,10 @@ export default function TaskItem({
               {/* Due Date */}
 
               {task.dueDate && (
-                <span
-                  className="
-                    rounded-full
-                    bg-gray-100
-                    px-2
-                    py-1
-                    text-xs
-                    text-gray-700
-                  "
-                >
+                <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
                   📅{" "}
                   {new Date(
-                    task.dueDate
+                    task.dueDate,
                   ).toLocaleDateString()}
                 </span>
               )}
@@ -470,33 +382,26 @@ export default function TaskItem({
         )}
       </div>
 
-      {/* ================= ACTIONS ================= */}
+      {/* Action Buttons */}
 
       <div className="flex shrink-0 gap-2">
-        {isEditing ? null : (
+        {!isEditing && (
           <>
             {/* Edit */}
 
             <button
               type="button"
-              onClick={handleEdit}
+              onClick={() => {
+                resetEditFields();
+                setIsEditing(true);
+              }}
               disabled={task.completed}
-              title={
+              className={`rounded-lg p-2 transition ${
                 task.completed
-                  ? "Completed tasks cannot be edited"
-                  : "Edit task"
-              }
-              className={`
-                rounded-lg
-                p-2
-                transition
-
-                ${
-                  task.completed
-                    ? "cursor-not-allowed text-gray-300"
-                    : "text-blue-600 hover:bg-blue-100"
-                }
-              `}
+                  ? "cursor-not-allowed text-gray-300"
+                  : "text-blue-600 hover:bg-blue-100"
+              }`}
+              aria-label="Edit task"
             >
               <Pencil size={18} />
             </button>
@@ -506,7 +411,6 @@ export default function TaskItem({
             <button
               type="button"
               onClick={onDelete}
-              title="Delete task"
               className="
                 rounded-lg
                 p-2
@@ -514,6 +418,7 @@ export default function TaskItem({
                 transition
                 hover:bg-red-100
               "
+              aria-label="Delete task"
             >
               <Trash2 size={18} />
             </button>

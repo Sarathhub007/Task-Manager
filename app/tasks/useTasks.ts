@@ -20,9 +20,9 @@ export function useTasks() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // =========================
+  // ==================================================
   // Fetch Tasks
-  // =========================
+  // ==================================================
 
   const fetchTasks = async () => {
     try {
@@ -48,14 +48,13 @@ export function useTasks() {
     fetchTasks();
   }, []);
 
-  // =========================
-  // Load Filter
-  // =========================
+  // ==================================================
+  // Load Saved Filter
+  // ==================================================
 
   useEffect(() => {
-    const savedFilter = localStorage.getItem(
-      "taskFilter"
-    ) as Filter | null;
+    const savedFilter =
+      localStorage.getItem("taskFilter") as Filter | null;
 
     if (
       savedFilter === "all" ||
@@ -66,37 +65,39 @@ export function useTasks() {
     }
   }, []);
 
-  // =========================
+  // ==================================================
   // Save Filter
-  // =========================
+  // ==================================================
 
   useEffect(() => {
     localStorage.setItem("taskFilter", filter);
   }, [filter]);
 
-  // =========================
+  // ==================================================
   // Add Task
-  // =========================
+  // ==================================================
 
   const addTask = async (
     title: string,
     description: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
     category: string,
-    dueDate: string
+    dueDate: string,
   ) => {
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
-          title,
-          description,
+          title: title.trim(),
+          description: description.trim() || null,
           priority,
           category,
-          dueDate,
+          dueDate: dueDate || null,
         }),
       });
 
@@ -110,13 +111,13 @@ export function useTasks() {
     }
   };
 
-  // =========================
+  // ==================================================
   // Toggle Task
-  // =========================
+  // ==================================================
 
   const toggleTask = async (id: string) => {
     const task = tasks.find(
-      (task) => task.id === id
+      (task) => task.id === id,
     );
 
     if (!task) return;
@@ -126,18 +127,20 @@ export function useTasks() {
         `/api/tasks/${id}`,
         {
           method: "PATCH",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             completed: !task.completed,
           }),
-        }
+        },
       );
 
       if (!res.ok) {
         throw new Error(
-          "Failed to update task"
+          "Failed to update task",
         );
       }
 
@@ -145,14 +148,14 @@ export function useTasks() {
     } catch (err) {
       console.error(
         "Failed to toggle task:",
-        err
+        err,
       );
     }
   };
 
-  // =========================
+  // ==================================================
   // Edit Task
-  // =========================
+  // ==================================================
 
   const editTask = async (
     id: string,
@@ -160,32 +163,36 @@ export function useTasks() {
     description: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
     category: string,
-    dueDate: string
+    dueDate: string,
   ) => {
     try {
       const res = await fetch(
         `/api/tasks/${id}`,
         {
           method: "PATCH",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             title: title.trim(),
+
             description:
               description.trim() || null,
+
             priority,
+
             category,
-            dueDate: dueDate
-              ? new Date(dueDate)
-              : null,
+
+            dueDate: dueDate || null,
           }),
-        }
+        },
       );
 
       if (!res.ok) {
         throw new Error(
-          "Failed to update task"
+          "Failed to update task",
         );
       }
 
@@ -193,14 +200,14 @@ export function useTasks() {
     } catch (err) {
       console.error(
         "Failed to edit task:",
-        err
+        err,
       );
     }
   };
 
-  // =========================
+  // ==================================================
   // Delete Task
-  // =========================
+  // ==================================================
 
   const deleteTask = async (id: string) => {
     try {
@@ -208,12 +215,12 @@ export function useTasks() {
         `/api/tasks/${id}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (!res.ok) {
         throw new Error(
-          "Failed to delete task"
+          "Failed to delete task",
         );
       }
 
@@ -221,51 +228,61 @@ export function useTasks() {
     } catch (err) {
       console.error(
         "Failed to delete task:",
-        err
+        err,
       );
     }
   };
 
-  // =========================
+  // ==================================================
   // Clear Completed
-  // =========================
+  // ==================================================
 
   const clearCompleted = async () => {
-    const completedTasks =
-      tasks.filter(
-        (task) => task.completed
-      );
+    const completedTasks = tasks.filter(
+      (task) => task.completed,
+    );
+
+    if (completedTasks.length === 0) {
+      return;
+    }
 
     try {
       await Promise.all(
         completedTasks.map((task) =>
-          fetch(`/api/tasks/${task.id}`, {
-            method: "DELETE",
-          })
-        )
+          fetch(
+            `/api/tasks/${task.id}`,
+            {
+              method: "DELETE",
+            },
+          ),
+        ),
       );
 
       await fetchTasks();
     } catch (err) {
       console.error(
         "Failed to clear completed tasks:",
-        err
+        err,
       );
     }
   };
 
-  // =========================
+  // ==================================================
   // Search + Filter
-  // =========================
+  // ==================================================
 
   const filteredTasks = tasks.filter(
     (task) => {
+      // Filter
+
       const matchesFilter =
         filter === "completed"
           ? task.completed
           : filter === "pending"
             ? !task.completed
             : true;
+
+      // Search
 
       const searchText =
         search.trim().toLowerCase();
@@ -283,29 +300,31 @@ export function useTasks() {
           .includes(searchText);
 
       return (
-        matchesFilter && matchesSearch
+        matchesFilter &&
+        matchesSearch
       );
-    }
+    },
   );
 
-  // =========================
+  // ==================================================
   // Statistics
-  // =========================
+  // ==================================================
 
   const total = tasks.length;
 
   const completed = tasks.filter(
-    (task) => task.completed
+    (task) => task.completed,
   ).length;
 
   const pending = total - completed;
 
-  // =========================
+  // ==================================================
   // Return
-  // =========================
+  // ==================================================
 
   return {
     tasks: filteredTasks,
+
     allTasks: tasks,
 
     filter,

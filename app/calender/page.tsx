@@ -1,587 +1,581 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CalendarDays,
-  CheckCircle2,
-  Circle,
-  Loader2,
+  CircleCheckBig,
+  Clock3,
+  ArrowRight,
 } from "lucide-react";
 
-type Task = {
-  id: string;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  priority: "LOW" | "MEDIUM" | "HIGH";
-  category: string | null;
-  dueDate: string | null;
-};
+import { useTasks } from "../tasks/useTasks";
 
 export default function CalendarPage() {
-  const today = new Date();
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [currentDate, setCurrentDate] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1)
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    new Date(),
   );
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedDate, setSelectedDate] = useState<number | null>(
-    today.getDate()
-  );
+  const { allTasks } = useTasks();
 
-  const [loading, setLoading] = useState(true);
-  const [updatingTask, setUpdatingTask] = useState<string | null>(null);
-
-  // =========================
-  // Fetch Tasks
-  // =========================
-
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch("/api/tasks");
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch tasks");
-      }
-
-      const data = await res.json();
-
-      setTasks(data);
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  // =========================
-  // Calendar Information
-  // =========================
+  // ==================================================
+  // Current month
+  // ==================================================
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
-  const firstDay = new Date(year, month, 1).getDay();
-
-  const daysInMonth = new Date(
-    year,
-    month + 1,
-    0
-  ).getDate();
 
   const monthName = currentDate.toLocaleDateString(
     "en-US",
     {
       month: "long",
-    }
+      year: "numeric",
+    },
   );
 
-  // =========================
-  // Calendar Days
-  // =========================
+  // ==================================================
+  // Calendar calculations
+  // ==================================================
 
-  const days = useMemo(() => {
-    const calendarDays: (number | null)[] = [];
+  const firstDay = new Date(
+    year,
+    month,
+    1,
+  ).getDay();
 
-    for (let i = 0; i < firstDay; i++) {
-      calendarDays.push(null);
-    }
+  const daysInMonth = new Date(
+    year,
+    month + 1,
+    0,
+  ).getDate();
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      calendarDays.push(day);
-    }
+  const days: (number | null)[] = [];
 
-    return calendarDays;
-  }, [firstDay, daysInMonth]);
+  // Empty days before first day
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
 
-  // =========================
-  // Date Helper
-  // =========================
+  // Actual days
+  for (let day = 1; day <= daysInMonth; day++) {
+    days.push(day);
+  }
 
-  const formatDate = (
-    year: number,
-    month: number,
-    day: number
+  // ==================================================
+  // Date helper
+  // ==================================================
+
+  const isSameDate = (
+    date1: Date,
+    date2: Date,
   ) => {
-    return `${year}-${String(month + 1).padStart(
-      2,
-      "0"
-    )}-${String(day).padStart(2, "0")}`;
+    return (
+      date1.getFullYear() ===
+        date2.getFullYear() &&
+      date1.getMonth() ===
+        date2.getMonth() &&
+      date1.getDate() ===
+        date2.getDate()
+    );
   };
 
-  // =========================
-  // Tasks For Date
-  // =========================
+  // ==================================================
+  // Tasks for selected date
+  // ==================================================
 
-  const getTasksForDate = (day: number) => {
-    const selectedDateString = formatDate(
-      year,
-      month,
-      day
-    );
+  const selectedTasks = useMemo(() => {
+    return allTasks.filter((task) => {
+      if (!task.dueDate) {
+        return false;
+      }
 
-    return tasks.filter((task) => {
-      if (!task.dueDate) return false;
+      return isSameDate(
+        new Date(task.dueDate),
+        selectedDate,
+      );
+    });
+  }, [allTasks, selectedDate]);
+
+  // ==================================================
+  // Tasks for calendar day
+  // ==================================================
+
+  const getTasksForDay = (day: number) => {
+    return allTasks.filter((task) => {
+      if (!task.dueDate) {
+        return false;
+      }
 
       const taskDate = new Date(task.dueDate);
 
-      const taskDateString = formatDate(
-        taskDate.getFullYear(),
-        taskDate.getMonth(),
-        taskDate.getDate()
+      return (
+        taskDate.getFullYear() === year &&
+        taskDate.getMonth() === month &&
+        taskDate.getDate() === day
       );
-
-      return taskDateString === selectedDateString;
     });
   };
 
-  const selectedTasks = selectedDate
-    ? getTasksForDate(selectedDate)
-    : [];
-
-  // =========================
-  // Task Indicator
-  // =========================
-
-  const hasTasksOnDate = (day: number) => {
-    return getTasksForDate(day).length > 0;
-  };
-
-  // =========================
-  // Today
-  // =========================
-
-  const isToday = (day: number) => {
-    return (
-      day === today.getDate() &&
-      month === today.getMonth() &&
-      year === today.getFullYear()
-    );
-  };
-
-  // =========================
-  // Complete / Uncomplete
-  // =========================
-
-  const toggleTask = async (task: Task) => {
-    if (updatingTask) return;
-
-    try {
-      setUpdatingTask(task.id);
-
-      const res = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          completed: !task.completed,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update task");
-      }
-
-      const updatedTask = await res.json();
-
-      setTasks((previousTasks) =>
-        previousTasks.map((currentTask) =>
-          currentTask.id === task.id
-            ? updatedTask
-            : currentTask
-        )
-      );
-    } catch (error) {
-      console.error("Failed to update task:", error);
-    } finally {
-      setUpdatingTask(null);
-    }
-  };
-
-  // =========================
-  // Month Navigation
-  // =========================
+  // ==================================================
+  // Previous month
+  // ==================================================
 
   const previousMonth = () => {
-    setCurrentDate(
-      new Date(year, month - 1, 1)
+    const newDate = new Date(
+      year,
+      month - 1,
+      1,
     );
 
-    setSelectedDate(null);
+    setCurrentDate(newDate);
+    setSelectedDate(newDate);
   };
+
+  // ==================================================
+  // Next month
+  // ==================================================
 
   const nextMonth = () => {
-    setCurrentDate(
-      new Date(year, month + 1, 1)
+    const newDate = new Date(
+      year,
+      month + 1,
+      1,
     );
 
-    setSelectedDate(null);
+    setCurrentDate(newDate);
+    setSelectedDate(newDate);
   };
+
+  // ==================================================
+  // Today
+  // ==================================================
 
   const goToToday = () => {
-    setCurrentDate(
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
-      )
-    );
+    const today = new Date();
 
-    setSelectedDate(today.getDate());
+    setCurrentDate(today);
+    setSelectedDate(today);
   };
 
+  // ==================================================
+  // UI
+  // ==================================================
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
-      {/* ================= HEADER ================= */}
+      {/* ==================================================
+          HEADER
+      ================================================== */}
 
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          Calendar
+        </h1>
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-            <CalendarDays size={24} />
-          </div>
-
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Calendar
-            </h1>
-
-            <p className="text-sm text-gray-500">
-              View and manage your tasks by due date.
-            </p>
-          </div>
-
-        </div>
+        <p className="mt-2 text-sm text-gray-500 sm:text-base">
+          View and manage your tasks by date.
+        </p>
       </div>
 
-      {/* ================= CALENDAR ================= */}
+      {/* ==================================================
+          MAIN WORKSPACE
+      ================================================== */}
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 
-        {/* Month Navigation */}
+        {/* ==================================================
+            CALENDAR
+        ================================================== */}
 
-        <div className="mb-6 flex items-center justify-between">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
-          <button
-            type="button"
-            onClick={previousMonth}
-            className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100"
-            aria-label="Previous month"
-          >
-            <ChevronLeft size={22} />
-          </button>
+          {/* Calendar Header */}
 
-          <div className="text-center">
-
-            <h2 className="text-xl font-bold text-gray-900">
-              {monthName} {year}
-            </h2>
+          <div className="mb-6 flex items-center justify-between">
 
             <button
               type="button"
-              onClick={goToToday}
-              className="mt-1 text-xs font-medium text-blue-600 hover:underline"
+              onClick={previousMonth}
+              className="
+                rounded-lg
+                p-2
+                text-gray-500
+                transition
+                hover:bg-gray-100
+                hover:text-gray-900
+              "
+              aria-label="Previous month"
             >
-              Go to today
+              <ChevronLeft size={20} />
+            </button>
+
+            <div className="text-center">
+
+              <h2 className="text-xl font-bold text-gray-900">
+                {monthName}
+              </h2>
+
+              <button
+                type="button"
+                onClick={goToToday}
+                className="
+                  mt-1
+                  text-xs
+                  font-medium
+                  text-blue-600
+                  hover:underline
+                "
+              >
+                Today
+              </button>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="
+                rounded-lg
+                p-2
+                text-gray-500
+                transition
+                hover:bg-gray-100
+                hover:text-gray-900
+              "
+              aria-label="Next month"
+            >
+              <ChevronRight size={20} />
             </button>
 
           </div>
 
-          <button
-            type="button"
-            onClick={nextMonth}
-            className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100"
-            aria-label="Next month"
-          >
-            <ChevronRight size={22} />
-          </button>
+          {/* ==================================================
+              WEEKDAYS
+          ================================================== */}
 
-        </div>
+          <div className="mb-2 grid grid-cols-7">
 
-        {/* Week Days */}
-
-        <div className="mb-2 grid grid-cols-7">
-          {[
-            "Sun",
-            "Mon",
-            "Tue",
-            "Wed",
-            "Thu",
-            "Fri",
-            "Sat",
-          ].map((day) => (
-            <div
-              key={day}
-              className="py-2 text-center text-xs font-semibold text-gray-400 sm:text-sm"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar Days */}
-
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
-
-          {days.map((day, index) => {
-            if (day === null) {
-              return (
-                <div
-                  key={`empty-${index}`}
-                  className="aspect-square"
-                />
-              );
-            }
-
-            const todayDate = isToday(day);
-            const hasTasks = hasTasksOnDate(day);
-            const selected = selectedDate === day;
-
-            return (
-              <button
+            {[
+              "Sun",
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+            ].map((day) => (
+              <div
                 key={day}
-                type="button"
-                onClick={() => setSelectedDate(day)}
-                className={`
-                  relative
-                  flex
-                  aspect-square
-                  flex-col
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  transition-all
-
-                  ${
-                    selected
-                      ? "border-blue-600 bg-blue-600 text-white shadow-md"
-                      : todayDate
-                        ? "border-blue-300 bg-blue-50 text-blue-700"
-                        : "border-gray-100 text-gray-700 hover:border-blue-200 hover:bg-blue-50"
-                  }
-                `}
+                className="
+                  py-2
+                  text-center
+                  text-xs
+                  font-semibold
+                  uppercase
+                  tracking-wide
+                  text-gray-400
+                "
               >
-                <span
-                  className={
-                    todayDate ? "font-bold" : ""
-                  }
-                >
-                  {day}
-                </span>
+                {day}
+              </div>
+            ))}
 
-                {hasTasks && (
+          </div>
+
+          {/* ==================================================
+              DAYS
+          ================================================== */}
+
+          <div className="grid grid-cols-7 gap-2">
+
+            {days.map((day, index) => {
+
+              // Empty calendar cell
+
+              if (day === null) {
+                return (
+                  <div
+                    key={`empty-${index}`}
+                    className="min-h-20"
+                  />
+                );
+              }
+
+              const date = new Date(
+                year,
+                month,
+                day,
+              );
+
+              const dayTasks =
+                getTasksForDay(day);
+
+              const selected =
+                isSameDate(
+                  date,
+                  selectedDate,
+                );
+
+              const today =
+                isSameDate(
+                  date,
+                  new Date(),
+                );
+
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() =>
+                    setSelectedDate(date)
+                  }
+                  className={`
+                    relative
+                    min-h-20
+                    rounded-xl
+                    border
+                    p-2
+                    text-left
+                    transition
+
+                    ${
+                      selected
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-100 bg-gray-50 hover:border-blue-200 hover:bg-blue-50/50"
+                    }
+                  `}
+                >
+
+                  {/* Day number */}
+
                   <span
                     className={`
-                      absolute
-                      bottom-1
-                      h-1.5
-                      w-1.5
+                      flex
+                      h-7
+                      w-7
+                      items-center
+                      justify-center
                       rounded-full
+                      text-sm
+                      font-semibold
+
                       ${
-                        selected
-                          ? "bg-white"
-                          : "bg-blue-600"
+                        today
+                          ? "bg-blue-600 text-white"
+                          : selected
+                            ? "text-blue-700"
+                            : "text-gray-700"
                       }
                     `}
-                  />
-                )}
-              </button>
-            );
-          })}
+                  >
+                    {day}
+                  </span>
 
-        </div>
+                  {/* Task indicator */}
 
-        {/* Legend */}
+                  {dayTasks.length > 0 && (
+                    <div className="mt-2 space-y-1">
 
-        <div className="mt-5 flex items-center justify-center gap-5 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
 
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-blue-600" />
-            Has tasks
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+
+                        <span className="truncate text-[11px] text-gray-500">
+                          {dayTasks.length}{" "}
+                          {dayTasks.length === 1
+                            ? "task"
+                            : "tasks"}
+                        </span>
+
+                      </div>
+
+                      <div className="hidden text-[11px] text-gray-500 sm:block">
+                        {dayTasks[0].title}
+                      </div>
+
+                    </div>
+                  )}
+
+                </button>
+              );
+            })}
+
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full border border-blue-500 bg-blue-50" />
-            Today
-          </div>
+        </section>
 
-        </div>
-      </div>
+        {/* ==================================================
+            SELECTED DATE TASKS
+        ================================================== */}
 
-      {/* ================= SELECTED DATE ================= */}
+        <section className="rounded-2xl border border-gray-200 bg-gray-50 p-5 sm:p-6">
 
-      {selectedDate && (
-        <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          {/* Header */}
 
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-6">
 
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                Selected date
-              </p>
+            <div className="mb-2 flex items-center gap-2 text-blue-600">
 
-              <h2 className="mt-1 text-xl font-bold text-gray-900">
-                {new Date(
-                  year,
-                  month,
-                  selectedDate
-                ).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </h2>
+              <CalendarDays size={19} />
+
+              <span className="text-sm font-semibold">
+                Selected Date
+              </span>
+
             </div>
 
-            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {selectedDate.toLocaleDateString(
+                "en-US",
+                {
+                  month: "long",
+                  day: "numeric",
+                },
+              )}
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
               {selectedTasks.length}{" "}
               {selectedTasks.length === 1
                 ? "task"
-                : "tasks"}
-            </span>
+                : "tasks"}{" "}
+              scheduled
+            </p>
 
           </div>
 
-          {/* Loading */}
+          {/* ==================================================
+              TASKS
+          ================================================== */}
 
-          {loading && (
-            <div className="flex justify-center py-8">
-              <Loader2
-                size={24}
-                className="animate-spin text-blue-600"
-              />
-            </div>
-          )}
+          {selectedTasks.length === 0 ? (
 
-          {/* No Tasks */}
+            <div className="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-10 text-center">
 
-          {!loading &&
-            selectedTasks.length === 0 && (
-              <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center">
-
-                <div className="mb-2 text-3xl">
-                  📝
-                </div>
-
-                <p className="font-medium text-gray-700">
-                  No tasks for this day
-                </p>
-
-                <p className="mt-1 text-sm text-gray-400">
-                  Add a task with this date as its due date.
-                </p>
-
+              <div className="mb-3 text-4xl">
+                📅
               </div>
-            )}
 
-          {/* Tasks */}
+              <h3 className="font-semibold text-gray-800">
+                No tasks for this date
+              </h3>
 
-          {!loading &&
-            selectedTasks.length > 0 && (
-              <div className="space-y-3">
+              <p className="mt-2 text-sm text-gray-500">
+                Select another date or create a
+                task with a due date.
+              </p>
 
-                {selectedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                      rounded-xl
-                      border
-                      border-gray-100
-                      p-3
-                      transition
-                      hover:bg-gray-50
-                    "
-                  >
+            </div>
 
-                    {/* Completion Button */}
+          ) : (
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleTask(task)
-                      }
-                      disabled={
-                        updatingTask === task.id
-                      }
-                      className="
-                        shrink-0
-                        transition
-                        hover:scale-110
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                      aria-label={
-                        task.completed
-                          ? "Mark task as pending"
-                          : "Mark task as completed"
-                      }
-                    >
-                      {updatingTask === task.id ? (
-                        <Loader2
-                          size={21}
-                          className="animate-spin text-blue-500"
-                        />
-                      ) : task.completed ? (
-                        <CheckCircle2
-                          size={21}
-                          className="text-green-500"
-                        />
-                      ) : (
-                        <Circle
-                          size={21}
-                          className="text-gray-400 hover:text-blue-500"
-                        />
-                      )}
-                    </button>
+            <div className="space-y-3">
 
-                    {/* Task Content */}
+              {selectedTasks.map((task) => (
+
+                <Link
+                  key={task.id}
+                  href={`/tasks?task=${task.id}`}
+                  className="
+                    block
+                    rounded-xl
+                    border
+                    border-gray-200
+                    bg-white
+                    p-4
+                    shadow-sm
+                    transition
+                    hover:-translate-y-0.5
+                    hover:border-blue-300
+                    hover:shadow-md
+                  "
+                >
+
+                  <div className="flex items-start gap-3">
+
+                    {/* Status icon */}
+
+                    {task.completed ? (
+
+                      <CircleCheckBig
+                        size={20}
+                        className="
+                          mt-0.5
+                          shrink-0
+                          text-green-500
+                        "
+                      />
+
+                    ) : (
+
+                      <Clock3
+                        size={20}
+                        className="
+                          mt-0.5
+                          shrink-0
+                          text-yellow-500
+                        "
+                      />
+
+                    )}
+
+                    {/* Task information */}
 
                     <div className="min-w-0 flex-1">
 
-                      <p
-                        className={`
-                          truncate
-                          font-medium
-                          ${
+                      <div className="flex items-center justify-between gap-3">
+
+                        <h3
+                          className={`font-semibold ${
                             task.completed
                               ? "text-gray-400 line-through"
-                              : "text-gray-800"
-                          }
-                        `}
-                      >
-                        {task.title}
-                      </p>
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {task.title}
+                        </h3>
 
-                      <div className="mt-1 flex flex-wrap gap-2">
+                        <ArrowRight
+                          size={16}
+                          className="
+                            shrink-0
+                            text-gray-400
+                          "
+                        />
+
+                      </div>
+
+                      {/* Description */}
+
+                      {task.description && (
+                        <p className="mt-1 line-clamp-2 text-sm text-gray-500">
+                          {task.description}
+                        </p>
+                      )}
+
+                      {/* Tags */}
+
+                      <div className="mt-2 flex flex-wrap gap-2">
 
                         <span
                           className={`
                             rounded-full
                             px-2
-                            py-0.5
-                            text-[10px]
+                            py-1
+                            text-xs
                             font-semibold
 
                             ${
-                              task.priority === "HIGH"
+                              task.priority ===
+                              "HIGH"
                                 ? "bg-red-100 text-red-600"
-                                : task.priority === "MEDIUM"
+                                : task.priority ===
+                                    "MEDIUM"
                                   ? "bg-yellow-100 text-yellow-700"
                                   : "bg-green-100 text-green-700"
                             }
@@ -591,41 +585,64 @@ export default function CalendarPage() {
                         </span>
 
                         {task.category && (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                          <span className="
+                            rounded-full
+                            bg-blue-100
+                            px-2
+                            py-1
+                            text-xs
+                            font-semibold
+                            text-blue-700
+                          ">
                             {task.category}
                           </span>
                         )}
 
                       </div>
+
                     </div>
 
-                    {/* View Tasks */}
-
-                    <Link
-                      href="/tasks"
-                      className="
-                        shrink-0
-                        rounded-lg
-                        px-3
-                        py-2
-                        text-xs
-                        font-medium
-                        text-blue-600
-                        hover:bg-blue-50
-                      "
-                    >
-                      View
-                    </Link>
-
                   </div>
-                ))}
 
-              </div>
-            )}
+                </Link>
 
-        </div>
-      )}
+              ))}
 
+            </div>
+
+          )}
+
+          {/* ==================================================
+              OPEN TASKBOARD
+          ================================================== */}
+
+          <Link
+            href="/tasks"
+            className="
+              mt-6
+              flex
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-blue-600
+              px-4
+              py-3
+              text-sm
+              font-semibold
+              text-white
+              transition
+              hover:bg-blue-700
+            "
+          >
+            Open TaskBoard
+
+            <ArrowRight size={17} />
+          </Link>
+
+        </section>
+
+      </div>
     </main>
   );
 }
